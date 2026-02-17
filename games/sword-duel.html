@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sword Duel · StickGames</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d0d1a;overflow:hidden;height:100vh;cursor:none;font-family:'Nunito',sans-serif;}
+canvas{display:block;}
+#cur{position:fixed;width:24px;height:24px;background:#888;border:2.5px solid #bbb;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+#cur::before,#cur::after{content:'';position:absolute;width:4px;height:4px;background:#ddd;border-radius:50%;top:40%;}
+#cur::before{left:22%;}#cur::after{right:22%;}
+
+.screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(13,13,26,0.96);}
+.screen.hidden{display:none;}
+.panel{background:#14142a;border-radius:24px;padding:40px;max-width:540px;width:95%;border:2px solid rgba(255,255,255,0.08);text-align:center;}
+.panel h2{font-family:'Fredoka One',cursive;font-size:2.8rem;color:#f7c44f;margin-bottom:8px;}
+.panel p{color:#7070a0;margin-bottom:28px;font-size:0.95rem;}
+.mode-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.mode-btn{background:#1a1a35;border:2px solid rgba(255,255,255,0.1);border-radius:16px;padding:22px 16px;cursor:pointer;color:#fff;transition:all 0.2s;}
+.mode-btn:hover{border-color:#f7c44f;background:rgba(247,196,79,0.08);transform:translateY(-3px);}
+.mode-btn h3{font-family:'Fredoka One',cursive;font-size:1.4rem;margin-bottom:6px;}
+.mode-btn p{font-size:0.8rem;color:#7070a0;margin:0;}
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left;margin-bottom:24px;font-size:0.85rem;}
+.ctrl-col h4{font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:8px;}
+.ctrl-item{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:#aaa;}
+.ctrl-item span:last-child{background:#1a1a35;padding:2px 10px;border-radius:6px;color:#fff;font-weight:800;}
+
+#hud{position:fixed;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;z-index:50;pointer-events:none;}
+.hp-panel{background:rgba(13,13,26,0.9);border-radius:14px;padding:12px 16px;min-width:200px;border:2px solid rgba(255,255,255,0.06);}
+.hp-label{font-size:13px;font-weight:800;margin-bottom:6px;}
+.hp-bar{height:14px;background:#1a1a35;border-radius:7px;overflow:hidden;}
+.hp-fill{height:100%;border-radius:7px;transition:width 0.1s;}
+.stock-row{display:flex;gap:5px;margin-top:7px;}
+.stock-dot{width:14px;height:14px;border-radius:50%;transition:all 0.3s;}
+
+#center-hud{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.round-text{font-family:'Fredoka One',cursive;font-size:1rem;color:#7070a0;}
+.combo-flash{font-family:'Fredoka One',cursive;font-size:1.8rem;color:#f7c44f;text-shadow:0 0 20px #f7c44f;animation:combo-pop 0.5s ease;opacity:0;}
+.combo-flash.show{opacity:1;}
+@keyframes combo-pop{0%{transform:scale(0.5);}60%{transform:scale(1.2);}100%{transform:scale(1);}}
+
+#back{position:fixed;bottom:20px;left:20px;z-index:60;background:rgba(13,13,26,0.9);border:2px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 18px;color:#fff;text-decoration:none;font-weight:800;font-size:0.9rem;}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+
+<div class="screen" id="menuScreen">
+  <div class="panel">
+    <h2>Sword Duel</h2>
+    <p>Time your attacks, block at the right moment, land combos for massive damage</p>
+    <div class="mode-row">
+      <div class="mode-btn" onclick="startGame('showdown')">
+        <h3>⚔️ Showdown</h3>
+        <p>Fight waves of AI enemies. How long can you last?</p>
+      </div>
+      <div class="mode-btn" onclick="startGame('duel')">
+        <h3>🎮 VS Duel</h3>
+        <p>Local 2-player. First to win 3 rounds wins the set.</p>
+      </div>
+    </div>
+    <div class="ctrl-grid">
+      <div class="ctrl-col">
+        <h4 style="color:#4f8ef7">Player 1</h4>
+        <div class="ctrl-item"><span>Move</span><span>A / D</span></div>
+        <div class="ctrl-item"><span>Jump</span><span>W</span></div>
+        <div class="ctrl-item"><span>Attack</span><span>F</span></div>
+        <div class="ctrl-item"><span>Block</span><span>G</span></div>
+        <div class="ctrl-item"><span>Heavy</span><span>Shift</span></div>
+      </div>
+      <div class="ctrl-col">
+        <h4 style="color:#f74f8e">Player 2</h4>
+        <div class="ctrl-item"><span>Move</span><span>← / →</span></div>
+        <div class="ctrl-item"><span>Jump</span><span>↑</span></div>
+        <div class="ctrl-item"><span>Attack</span><span>L</span></div>
+        <div class="ctrl-item"><span>Block</span><span>;</span></div>
+        <div class="ctrl-item"><span>Heavy</span><span>↓ hold</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen hidden" id="winScreen">
+  <div class="panel" style="max-width:400px;">
+    <div id="winEmoji" style="font-size:5rem;margin-bottom:12px;"></div>
+    <h2 id="winTxt" style="color:#fff;"></h2>
+    <p style="color:#7070a0;margin-bottom:20px;" id="winSub"></p>
+    <button onclick="nextRound()" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#f7c44f,#f7824f);color:#000;font-family:'Fredoka One',cursive;font-size:1.3rem;cursor:pointer;margin-bottom:10px;">NEXT ROUND</button>
+    <a href="../index.html" style="display:block;color:#7070a0;text-decoration:none;font-weight:800;">← Back to Menu</a>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div class="hp-panel">
+    <div class="hp-label" style="color:#4f8ef7">🔵 Player 1</div>
+    <div class="hp-bar"><div class="hp-fill" id="hf1" style="background:linear-gradient(90deg,#4f8ef7,#4ff7d4)"></div></div>
+    <div class="stock-row" id="st1"></div>
+  </div>
+  <div id="center-hud">
+    <div class="round-text" id="roundTxt">ROUND 1</div>
+    <div class="combo-flash" id="comboFlash">COMBO!</div>
+  </div>
+  <div class="hp-panel">
+    <div class="hp-label" style="color:#f74f8e">🔴 Player 2</div>
+    <div class="hp-bar"><div class="hp-fill" id="hf2" style="background:linear-gradient(90deg,#f74f8e,#f7a44f)"></div></div>
+    <div class="stock-row" id="st2"></div>
+  </div>
+</div>
+<a href="../index.html" id="back">← Menu</a>
+<canvas id="c"></canvas>
+
+<script>
+const cur=document.getElementById('cur');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';});
+
+const C=document.getElementById('c'), ctx=C.getContext('2d');
+C.width=window.innerWidth; C.height=window.innerHeight;
+window.addEventListener('resize',()=>{C.width=window.innerWidth;C.height=window.innerHeight;});
+
+const keys={};
+document.addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' ')e.preventDefault();});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+const GH=100; // ground height
+let G={particles:[],sparks:[],shake:0,over:false,mode:'duel',round:1,scores:{p1:0,p2:0},p1:null,p2:null};
+
+function drawCircle(x,y,r,color){
+  // Ground shadow
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.beginPath();ctx.ellipse(x,C.height-GH+4,r*0.7,r*0.2,0,0,Math.PI*2);ctx.fill();
+  // Body gradient
+  const g=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);
+  const c1=lighten(color,45),c2=darken(color,30);
+  g.addColorStop(0,c1);g.addColorStop(0.65,color);g.addColorStop(1,c2);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=2.5;ctx.stroke();
+  // Eyes
+  const eo=r*0.28,ey=y-r*0.1;
+  ctx.fillStyle='white';
+  ctx.beginPath();ctx.arc(x-eo,ey,r*0.18,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+eo,ey,r*0.18,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=darken(color,80);
+  ctx.beginPath();ctx.arc(x-eo+r*0.04,ey-r*0.02,r*0.09,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+eo+r*0.04,ey-r*0.02,r*0.09,0,Math.PI*2);ctx.fill();
+}
+
+function lighten(hex,a){let c=parseInt(hex.replace('#',''),16)||0;return `rgb(${Math.min(255,(c>>16)+a)},${Math.min(255,((c>>8)&0xff)+a)},${Math.min(255,(c&0xff)+a)})`;}
+function darken(hex,a){return lighten(hex,-a);}
+
+class Particle{
+  constructor(x,y,vx,vy,col,life=40,sz=4){Object.assign(this,{x,y,vx,vy,col,life,sz,max:life});}
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.3;this.vx*=0.97;this.life--;}
+  draw(){ctx.globalAlpha=this.life/this.max;ctx.fillStyle=this.col;ctx.beginPath();ctx.arc(this.x,this.y,this.sz*(this.life/this.max),0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+}
+
+class Spark{
+  constructor(x,y){
+    this.x=x;this.y=y;const a=Math.random()*Math.PI*2,s=Math.random()*6+2;
+    this.vx=Math.cos(a)*s;this.vy=Math.sin(a)*s;this.life=20+Math.random()*15;this.max=this.life;
+    this.col=Math.random()<0.5?'#f7c44f':'#fff';
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.4;this.life--;}
+  draw(){
+    ctx.globalAlpha=this.life/this.max;ctx.strokeStyle=this.col;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(this.x-this.vx*2,this.y-this.vy*2);ctx.stroke();ctx.globalAlpha=1;
+  }
+}
+
+class Fighter{
+  constructor(x,color,isAI,controls){
+    this.startX=x;this.x=x;this.y=C.height-GH-32;
+    this.vx=0;this.vy=0;this.r=30;this.color=color;this.isAI=isAI;this.controls=controls;
+    this.hp=100;this.maxHp=100;this.grounded=false;this.facing=color==='#4f8ef7'?1:-1;
+    this.attacking=false;this.atkTimer=0;this.atkCd=0;this.atkType='light';
+    this.blocking=false;this.heavy=false;this.combo=0;this.comboTimer=0;
+    this.stunned=0;this.invincible=0;this.squish=1;this.atkHit=false;
+    this.dashCd=0;this.swordAngle=0;this.swordSwing=0;
+  }
+  reset(){
+    this.x=this.startX;this.y=C.height-GH-32;this.vx=0;this.vy=0;
+    this.hp=100;this.grounded=false;this.attacking=false;this.atkTimer=0;this.atkCd=0;
+    this.blocking=false;this.heavy=false;this.combo=0;this.comboTimer=0;this.stunned=0;this.invincible=0;this.squish=1;this.atkHit=false;
+  }
+  get kb(){return this.controls;}
+  update(opp){
+    if(this.stunned>0){this.stunned--;this.vx*=0.8;this.apply_physics();return;}
+    if(this.isAI){this.aiUpdate(opp);}else{this.playerUpdate();}
+    if(this.comboTimer>0){this.comboTimer--;if(this.comboTimer===0)this.combo=0;}
+    if(this.atkCd>0)this.atkCd--;
+    if(this.invincible>0)this.invincible--;
+    if(this.dashCd>0)this.dashCd--;
+    if(this.atkTimer>0){this.atkTimer--;if(this.atkTimer===0){this.attacking=false;this.atkHit=false;}}
+    this.facing=opp.x>this.x?1:-1;
+    this.apply_physics();
+    // Squish
+    this.squish+=(1-this.squish)*0.25;
+  }
+  playerUpdate(){
+    const k=this.kb;
+    this.blocking=keys[k.block]&&this.grounded;
+    this.heavy=keys[k.heavy];
+    if(!this.blocking){
+      if(keys[k.left])this.vx-=0.9;
+      if(keys[k.right])this.vx+=0.9;
+    }
+    if(keys[k.jump]&&this.grounded){this.vy=-16;this.grounded=false;this.squish=1.4;}
+    if(keys[k.attack]&&this.atkCd===0&&!this.blocking){
+      this.startAttack(this.heavy?'heavy':'light');
+    }
+  }
+  aiUpdate(opp){
+    const dist=Math.abs(opp.x-this.x);
+    const idealDist=80;
+    if(dist>idealDist+20)this.vx+=(opp.x>this.x?1:-1)*0.8;
+    else if(dist<idealDist-20)this.vx-=(opp.x>this.x?1:-1)*0.8;
+    // Block when opp is attacking
+    this.blocking=opp.attacking&&dist<120&&this.grounded&&Math.random()<0.6;
+    if(!this.blocking&&dist<120&&this.atkCd===0&&Math.random()<0.04)this.startAttack(Math.random()<0.25?'heavy':'light');
+    if(this.grounded&&Math.random()<0.008)this.vy=-16;
+  }
+  startAttack(type){
+    this.attacking=true;this.atkType=type;this.atkTimer=type==='heavy'?22:14;this.atkCd=type==='heavy'?40:20;
+    this.atkHit=false;this.swordSwing=1;
+  }
+  checkHit(opp){
+    if(!this.attacking||this.atkHit||this.atkTimer>this.atkType==='heavy'?16:10) return;
+    const reach=this.atkType==='heavy'?90:65;
+    const dist=Math.hypot(opp.x-this.x,opp.y-this.y);
+    const inFront=Math.sign(opp.x-this.x)===this.facing;
+    if(dist<reach&&inFront){
+      this.atkHit=true;
+      if(opp.blocking&&!this.heavy){
+        // Blocked - sparks, small pushback
+        G.shake=5;
+        for(let i=0;i<12;i++)G.sparks.push(new Spark(opp.x-opp.facing*30,opp.y-10));
+        this.vx=-this.facing*4;this.stunned=8;
+        this.combo=0;
+        showCombo('BLOCKED!','#4f8ef7');
+      } else {
+        const dmg=this.atkType==='heavy'?22:10;
+        opp.hp-=dmg; opp.vx=this.facing*(this.atkType==='heavy'?10:6);
+        opp.vy=this.atkType==='heavy'?-8:-4;
+        opp.stunned=this.atkType==='heavy'?20:8;opp.invincible=25;opp.squish=1.5;
+        this.combo++;this.comboTimer=120;
+        G.shake=this.atkType==='heavy'?14:7;
+        const cx=opp.x-this.facing*30,cy=opp.y-10;
+        for(let i=0;i<18;i++)G.sparks.push(new Spark(cx,cy));
+        for(let i=0;i<20;i++)G.particles.push(new Particle(cx,cy,(Math.random()-0.5)*7,(Math.random()-0.5)*7-2,opp.color,30,5));
+        if(this.combo>=3)showCombo(this.combo+'x COMBO!','#f7c44f');
+      }
+    }
+  }
+  apply_physics(){
+    this.vy+=0.7;this.vx*=0.88;
+    this.x+=this.vx;this.y+=this.vy;
+    const gY=C.height-GH-this.r;
+    if(this.y>=gY){this.y=gY;if(this.vy>2)this.squish=1.4;this.vy=0;this.grounded=true;}else this.grounded=false;
+    this.x=Math.max(this.r+10,Math.min(C.width-this.r-10,this.x));
+    if(this.y<-300)this.hp=0;
+  }
+  draw(){
+    // Blocking shield ring
+    if(this.blocking){
+      ctx.strokeStyle='rgba(79,142,247,0.7)';ctx.lineWidth=6;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r+12,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle='rgba(79,142,247,0.3)';ctx.lineWidth=14;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r+12,0,Math.PI*2);ctx.stroke();
+    }
+    // Flicker
+    if(this.invincible>0&&Math.floor(this.invincible/3)%2)return;
+    ctx.save();ctx.translate(this.x,this.y);ctx.scale(1+(this.squish-1)*0.5,this.squish);ctx.translate(-this.x,-this.y);
+    drawCircle(this.x,this.y,this.r,this.color);
+    ctx.restore();
+    // Sword
+    this.drawSword();
+  }
+  drawSword(){
+    const swingProg=this.atkTimer>0?(this.atkType==='heavy'?this.atkTimer/22:this.atkTimer/14):0;
+    const baseAngle=this.facing*(-Math.PI/4);
+    const swingA=this.attacking?baseAngle+this.facing*Math.PI*0.8*(1-swingProg):baseAngle;
+    const armX=this.x+this.facing*(this.r*0.7);
+    const armY=this.y;
+    const sLen=this.atkType==='heavy'&&this.attacking?60:45;
+    const tipX=armX+Math.cos(swingA)*sLen;
+    const tipY=armY+Math.sin(swingA)*sLen;
+    // Trail
+    if(this.attacking){
+      ctx.strokeStyle=this.atkType==='heavy'?'rgba(247,196,79,0.3)':'rgba(255,255,255,0.2)';
+      ctx.lineWidth=this.atkType==='heavy'?12:8;
+      ctx.lineCap='round';ctx.beginPath();ctx.moveTo(armX,armY);ctx.lineTo(tipX,tipY);ctx.stroke();
+    }
+    // Handle
+    ctx.strokeStyle='#8a6030';ctx.lineWidth=6;ctx.lineCap='round';
+    const hbX=armX-Math.cos(swingA)*10,hbY=armY-Math.sin(swingA)*10;
+    ctx.beginPath();ctx.moveTo(armX,armY);ctx.lineTo(hbX,hbY);ctx.stroke();
+    // Guard
+    ctx.strokeStyle='#c0a050';ctx.lineWidth=5;
+    const gA=swingA+Math.PI/2;
+    ctx.beginPath();ctx.moveTo(hbX+Math.cos(gA)*10,hbY+Math.sin(gA)*10);ctx.lineTo(hbX-Math.cos(gA)*10,hbY-Math.sin(gA)*10);ctx.stroke();
+    // Blade
+    const bladeCol=this.attacking?(this.atkType==='heavy'?'#f7e050':'#e8e8ff'):'#c8c8e8';
+    ctx.strokeStyle=bladeCol;ctx.lineWidth=this.atkType==='heavy'&&this.attacking?5:3;
+    ctx.beginPath();ctx.moveTo(hbX,hbY);ctx.lineTo(tipX,tipY);ctx.stroke();
+    // Glow on attack
+    if(this.attacking){
+      ctx.shadowBlur=20;ctx.shadowColor=this.atkType==='heavy'?'#f7c44f':'#fff';
+      ctx.strokeStyle=bladeCol;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(hbX,hbY);ctx.lineTo(tipX,tipY);ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+  }
+}
+
+function showCombo(txt,col='#f7c44f'){
+  const el=document.getElementById('comboFlash');
+  el.textContent=txt;el.style.color=col;el.style.textShadow=`0 0 20px ${col}`;
+  el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1200);
+}
+
+function startGame(mode){
+  G.mode=mode;G.round=1;G.scores={p1:0,p2:0};
+  document.getElementById('menuScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  initRound();
+  requestAnimationFrame(loop);
+}
+
+function initRound(){
+  const isAI=G.mode==='showdown';
+  G.p1=new Fighter(C.width*0.3,'#4f8ef7',false,{left:'a',right:'d',jump:'w',attack:'f',block:'g',heavy:'Shift'});
+  G.p2=new Fighter(C.width*0.7,'#f74f8e',isAI,{left:'ArrowLeft',right:'ArrowRight',jump:'ArrowUp',attack:'l',block:';',heavy:'ArrowDown'});
+  G.particles=[];G.sparks=[];G.shake=0;G.over=false;
+  updateStockUI();
+  document.getElementById('roundTxt').textContent=`ROUND ${G.round}`;
+}
+
+function nextRound(){
+  document.getElementById('winScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  G.round++;initRound();
+}
+
+function updateStockUI(){
+  ['p1','p2'].forEach((p,pi)=>{
+    const el=document.getElementById('st'+(pi+1));
+    el.innerHTML='';
+    const wins=G.scores[p];
+    for(let i=0;i<3;i++){
+      const d=document.createElement('div');d.className='stock-dot';
+      d.style.background=i<wins?pi===0?'#4f8ef7':'#f74f8e':'#2a2a4a';
+      el.appendChild(d);
+    }
+  });
+}
+
+function drawBG(){
+  // Arena background
+  const bg=ctx.createLinearGradient(0,0,0,C.height);
+  bg.addColorStop(0,'#0d0d1a');bg.addColorStop(0.6,'#15102a');bg.addColorStop(1,'#1f1040');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,C.width,C.height);
+  // Arena pillars (depth)
+  ctx.fillStyle='rgba(30,20,60,0.8)';
+  [C.width*0.1,C.width*0.9].forEach(x=>{
+    ctx.fillRect(x-20,100,40,C.height-GH-100);
+    ctx.fillStyle='rgba(50,30,90,0.6)';
+    ctx.fillRect(x-30,100,10,C.height-GH-100);
+    ctx.fillStyle='rgba(30,20,60,0.8)';
+  });
+  // Floor back layer
+  ctx.fillStyle='#2a1a50';ctx.fillRect(0,C.height-GH-20,C.width,25);
+  // Floor middle
+  ctx.fillStyle='#1f1440';ctx.fillRect(0,C.height-GH,C.width,GH);
+  // Floor highlight line
+  ctx.strokeStyle='rgba(180,100,255,0.4)';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,C.height-GH);ctx.lineTo(C.width,C.height-GH);ctx.stroke();
+  // Floor pattern
+  ctx.strokeStyle='rgba(120,60,200,0.08)';ctx.lineWidth=1;
+  for(let x=0;x<C.width;x+=80){
+    ctx.beginPath();ctx.moveTo(x,C.height-GH);ctx.lineTo(x,C.height);ctx.stroke();
+  }
+  // Ambient orbs (bg decorative)
+  const t=Date.now()*0.001;
+  [{x:C.width*0.2,y:C.height*0.6,r:60,c:'rgba(79,142,247,0.04)'},{x:C.width*0.8,y:C.height*0.6,r:60,c:'rgba(247,79,142,0.04)'}].forEach((o,i)=>{
+    const pulse=Math.sin(t+i)*10;
+    ctx.fillStyle=o.c;ctx.beginPath();ctx.arc(o.x,o.y,o.r+pulse,0,Math.PI*2);ctx.fill();
+  });
+}
+
+let frameCount=0;
+function loop(){
+  frameCount++;
+  ctx.save();
+  const sx=(Math.random()-0.5)*G.shake,sy=(Math.random()-0.5)*G.shake;
+  if(G.shake>0){ctx.translate(sx,sy);G.shake*=0.7;}
+  drawBG();
+  G.particles=G.particles.filter(p=>{p.update();p.draw();return p.life>0;});
+  G.sparks=G.sparks.filter(s=>{s.update();s.draw();return s.life>0;});
+  if(!G.over){
+    G.p1.update(G.p2);G.p2.update(G.p1);
+    G.p1.checkHit(G.p2);G.p2.checkHit(G.p1);
+  }
+  G.p1.draw();G.p2.draw();
+  // HP bars
+  document.getElementById('hf1').style.width=Math.max(0,G.p1.hp)+'%';
+  document.getElementById('hf2').style.width=Math.max(0,G.p2.hp)+'%';
+  ctx.restore();
+  // Win check
+  if(!G.over&&(G.p1.hp<=0||G.p2.hp<=0)){
+    G.over=true;
+    const p1won=G.p2.hp<=0;
+    if(p1won)G.scores.p1++;else G.scores.p2++;
+    updateStockUI();
+    const setOver=G.scores.p1>=3||G.scores.p2>=3;
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('winScreen').classList.remove('hidden');
+    document.getElementById('winEmoji').textContent=p1won?'🔵':'🔴';
+    document.getElementById('winTxt').textContent=(p1won?'Player 1':'Player 2')+' Wins Round '+(G.round)+'!';
+    document.getElementById('winSub').textContent=setOver?`${p1won?'Player 1':'Player 2'} wins the set! Score: ${G.scores.p1} - ${G.scores.p2}`:`Score: ${G.scores.p1} - ${G.scores.p2} · First to 3 wins`;
+    document.querySelector('#winScreen button').textContent=setOver?'PLAY AGAIN':'NEXT ROUND';
+    if(setOver){G.scores={p1:0,p2:0};G.round=0;}
+  }
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

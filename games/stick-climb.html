@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>StickClimb · StickGames</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d1a2a;overflow:hidden;height:100vh;cursor:none;font-family:'Nunito',sans-serif;}
+canvas{display:block;}
+#cur{position:fixed;width:24px;height:24px;background:#888;border:2.5px solid #bbb;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+#cur::before,#cur::after{content:'';position:absolute;width:4px;height:4px;background:#ddd;border-radius:50%;top:40%;}
+#cur::before{left:22%;}#cur::after{right:22%;}
+.screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(10,18,30,0.97);}
+.screen.hidden{display:none;}
+.panel{background:#0f1e30;border-radius:24px;padding:36px;max-width:560px;width:95%;border:2px solid rgba(255,255,255,0.08);text-align:center;}
+.panel h2{font-family:'Fredoka One',cursive;font-size:2.5rem;background:linear-gradient(135deg,#4f8ef7,#4ff7a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.mode-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0;}
+.mbtn{background:#0a1525;border:2px solid rgba(255,255,255,0.1);border-radius:16px;padding:22px;cursor:pointer;color:#fff;transition:all 0.2s;}
+.mbtn:hover{border-color:#4f8ef7;transform:translateY(-3px);background:rgba(79,142,247,0.08);}
+.mbtn h3{font-family:'Fredoka One',cursive;font-size:1.4rem;margin-bottom:6px;}
+.mbtn p{font-size:0.82rem;color:#5070a0;}
+.ctrl-box{background:#0a1525;border-radius:14px;padding:16px;margin:10px 0;text-align:left;}
+.ctrl-box h4{font-family:'Fredoka One',cursive;margin-bottom:8px;font-size:1rem;}
+.ci{display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;color:#8090b0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.ci span:last-child{background:#141f30;padding:2px 8px;border-radius:6px;color:#fff;font-weight:800;}
+#hud{position:fixed;top:0;left:0;right:0;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;z-index:50;pointer-events:none;}
+.hbox{background:rgba(10,18,30,0.92);border-radius:14px;padding:10px 18px;border:2px solid rgba(255,255,255,0.07);}
+.hname{font-size:12px;font-weight:800;margin-bottom:3px;}
+.halt{font-family:'Fredoka One',cursive;font-size:2rem;line-height:1;}
+#back{position:fixed;bottom:20px;left:20px;z-index:60;background:rgba(10,18,30,0.9);border:2px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 18px;color:#fff;text-decoration:none;font-weight:800;font-size:0.9rem;}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div class="screen" id="menuScreen">
+  <div class="panel">
+    <h2>StickClimb</h2>
+    <p style="color:#5070a0;margin-bottom:4px;">Grab platforms and swing to climb!</p>
+    <p style="color:#4ff7a0;font-size:0.85rem;margin-bottom:14px;">✓ Safety net — you won't die from falling</p>
+    <div class="mode-row">
+      <div class="mbtn" onclick="startGame('solo')"><h3>🧗 Solo</h3><p>Climb as high as you can.</p></div>
+      <div class="mbtn" onclick="startGame('race')"><h3>🏁 Race 2P</h3><p>First to 2000m wins!</p></div>
+    </div>
+    <div class="ctrl-box">
+      <h4 style="color:#4f8ef7">Player 1</h4>
+      <div class="ci"><span>Grab platform</span><span>Hold W</span></div>
+      <div class="ci"><span>Swing direction</span><span>A / D</span></div>
+    </div>
+    <div class="ctrl-box" id="p2ctrl" style="display:none">
+      <h4 style="color:#f74f8e">Player 2</h4>
+      <div class="ci"><span>Grab platform</span><span>Hold ↑</span></div>
+      <div class="ci"><span>Swing direction</span><span>← / →</span></div>
+    </div>
+    <a href="../index.html" style="color:#5070a0;font-weight:800;text-decoration:none;display:block;margin-top:16px;">← Back to Menu</a>
+  </div>
+</div>
+<div id="hud" class="hidden">
+  <div class="hbox"><div class="hname" style="color:#4f8ef7">🔵 P1</div><div class="halt" id="alt1" style="color:#4f8ef7">0m</div></div>
+  <div class="hbox" style="text-align:center;"><div style="font-family:'Fredoka One',cursive;font-size:0.95rem;color:#5070a0;" id="goalTxt"></div></div>
+  <div class="hbox" id="p2hud" style="display:none;"><div class="hname" style="color:#f74f8e">🔴 P2</div><div class="halt" id="alt2" style="color:#f74f8e">0m</div></div>
+</div>
+<a href="../index.html" id="back">← Menu</a>
+<canvas id="c"></canvas>
+<script>
+const cur=document.getElementById('cur');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';});
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+C.width=window.innerWidth;C.height=window.innerHeight;
+const keys={};
+document.addEventListener('keydown',e=>{keys[e.key]=true;['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)&&e.preventDefault();});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+document.addEventListener('keydown',e=>{if((e.key==='r'||e.key==='R')&&G)startGame(G.mode);});
+
+function L(h,a){let c=parseInt(h.replace('#',''),16)||0;return`rgb(${Math.min(255,(c>>16)+a)},${Math.min(255,((c>>8)&0xff)+a)},${Math.min(255,(c&0xff)+a)})`;}
+function D(h,a){return L(h,-a);}
+function face(x,y,r,col){
+  ctx.fillStyle='rgba(0,0,0,0.15)';ctx.beginPath();ctx.ellipse(x,y+r+4,r*0.6,r*0.18,0,0,Math.PI*2);ctx.fill();
+  const g=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);
+  g.addColorStop(0,L(col,45));g.addColorStop(0.65,col);g.addColorStop(1,D(col,35));
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=2.5;ctx.stroke();
+  const eo=r*0.28,ey=y-r*0.1;
+  ctx.fillStyle='white';[[-1,0],[1,0]].forEach(([s])=>{ctx.beginPath();ctx.arc(x+s*eo,ey,r*0.18,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle=D(col,70);[[-1,0],[1,0]].forEach(([s])=>{ctx.beginPath();ctx.arc(x+s*eo+r*0.04,ey-r*0.02,r*0.09,0,Math.PI*2);ctx.fill();});
+}
+
+let G=null;
+const WIN_ALT=2000;
+
+function genPlats(count,startY){
+  const ps=[];let y=startY;
+  for(let i=0;i<count;i++){
+    ps.push({x:60+Math.random()*(C.width-180),y,w:55+Math.random()*65,h:14});
+    y-=120+Math.random()*140;
+  }
+  return ps;
+}
+
+class Climber{
+  constructor(x,col,ctrl){
+    this.x=x;this.y=C.height-100;this.vx=0;this.vy=0;
+    this.r=22;this.color=col;this.ctrl=ctrl;
+    this.grabbing=false;this.anchor=null;this.ropeLen=0;
+    this.trail=[];this.squish=1;this.alt=0;this.nearIdx=-1;
+  }
+  update(plats,camY){
+    const k=this.ctrl,wantGrab=keys[k.grab];
+    // Find nearest platform
+    let nearest=null,nearDist=200,nearIdx=-1;
+    plats.forEach((p,i)=>{
+      const px=p.x+p.w/2,d=Math.hypot(this.x-px,this.y-p.y);
+      if(d<nearDist){nearDist=d;nearest=p;nearIdx=i;}
+    });
+    this.nearIdx=nearIdx;
+    if(wantGrab&&nearest&&!this.grabbing){
+      this.grabbing=true;
+      this.anchor={x:nearest.x+nearest.w/2,y:nearest.y};
+      this.ropeLen=Math.max(40,nearDist);
+    }
+    if(!wantGrab) this.grabbing=false;
+
+    if(this.grabbing&&this.anchor){
+      if(keys[k.left])this.vx-=0.55;
+      if(keys[k.right])this.vx+=0.55;
+      this.vy+=0.55;this.x+=this.vx;this.y+=this.vy;
+      const dx=this.x-this.anchor.x,dy=this.y-this.anchor.y;
+      const len=Math.hypot(dx,dy)||1;
+      if(len>this.ropeLen){
+        const scale=this.ropeLen/len;
+        const nx=dx/len,ny=dy/len;
+        const dot=this.vx*nx+this.vy*ny;
+        this.vx-=dot*nx;this.vy-=dot*ny;
+        this.x=this.anchor.x+dx*scale;this.y=this.anchor.y+dy*scale;
+      }
+      this.vx*=0.994;this.vy*=0.994;
+    } else {
+      if(keys[k.left])this.vx-=0.3;
+      if(keys[k.right])this.vx+=0.3;
+      this.vy+=0.6;this.vx*=0.97;
+      this.x+=this.vx;this.y+=this.vy;
+      // Platform collisions
+      plats.forEach(p=>{
+        if(this.x+this.r>p.x&&this.x-this.r<p.x+p.w&&this.vy>0&&this.y+this.r>=p.y&&this.y+this.r<=p.y+20){
+          this.y=p.y-this.r;this.vy*=-0.25;this.squish=1.4;
+        }
+      });
+    }
+    // Safety net - if too far below camera, snap to nearest visible platform
+    if(this.y>camY+C.height*1.5){
+      const vis=plats.filter(p=>p.y>camY-100&&p.y<camY+C.height);
+      if(vis.length){const p=vis[Math.floor(Math.random()*Math.min(3,vis.length))];this.x=p.x+p.w/2;this.y=p.y-this.r;this.vx=0;this.vy=0;}
+    }
+    // Wrap horizontal
+    if(this.x<-30)this.x=C.width+30;if(this.x>C.width+30)this.x=-30;
+    this.squish+=(1-this.squish)*0.22;
+    this.alt=Math.max(0,Math.floor((C.height-100-this.y)/8));
+    this.trail.push({x:this.x,y:this.y});if(this.trail.length>8)this.trail.shift();
+  }
+  draw(camY){
+    const sx=this.x,sy=this.y-camY;
+    if(this.grabbing&&this.anchor){
+      const ay=this.anchor.y-camY;
+      ctx.strokeStyle=this.color;ctx.lineWidth=3;ctx.globalAlpha=0.65;
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(this.anchor.x,ay);ctx.stroke();ctx.globalAlpha=1;
+      ctx.fillStyle=this.color;ctx.shadowBlur=12;ctx.shadowColor=this.color;
+      ctx.beginPath();ctx.arc(this.anchor.x,ay,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }
+    this.trail.forEach((pt,i)=>{
+      ctx.globalAlpha=i/this.trail.length*0.2;ctx.fillStyle=this.color;
+      ctx.beginPath();ctx.arc(pt.x,pt.y-camY,this.r*(i/this.trail.length)*0.7,0,Math.PI*2);ctx.fill();
+    });ctx.globalAlpha=1;
+    ctx.save();ctx.translate(sx,sy);ctx.scale(1+(this.squish-1)*0.4,this.squish);ctx.translate(-sx,-sy);
+    face(sx,sy,this.r,this.color);ctx.restore();
+  }
+}
+
+function startGame(mode){
+  document.getElementById('menuScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('p2ctrl').style.display=mode==='race'?'block':'none';
+  document.getElementById('p2hud').style.display=mode==='race'?'block':'none';
+  document.getElementById('goalTxt').textContent=mode==='race'?'Race to '+WIN_ALT+'m!':'Beat your altitude record!';
+  const plats=genPlats(400,C.height-200);
+  plats.push({x:0,y:C.height-50,w:C.width,h:20});
+  G={mode,plats,camY:0,particles:[],over:false,winner:null,
+    p1:new Climber(C.width*0.4,'#4f8ef7',{grab:'w',left:'a',right:'d'}),
+    p2:mode==='race'?new Climber(C.width*0.6,'#f74f8e',{grab:'ArrowUp',left:'ArrowLeft',right:'ArrowRight'}):null
+  };
+  if(!G._looping){G._looping=true;loop();}
+}
+
+function drawBG(camY){
+  const alt=Math.max(0,-camY/8);
+  const sky=ctx.createLinearGradient(0,0,0,C.height);
+  const b=Math.max(3,10-alt/80);
+  sky.addColorStop(0,`hsl(215,55%,${b}%)`);sky.addColorStop(1,`hsl(220,45%,${b+4}%)`);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,C.width,C.height);
+  if(alt>150){
+    const a=Math.min(0.7,(alt-150)/300);
+    ctx.fillStyle=`rgba(200,210,255,${a*0.5})`;
+    for(let i=0;i<100;i++){ctx.beginPath();ctx.arc((i*173+10)%C.width,(i*89+20)%C.height,0.7,0,Math.PI*2);ctx.fill();}
+  }
+  // Parallax BG clouds/mountains
+  [0.1,0.2].forEach((sp,li)=>{
+    const oy=(camY*sp)%C.height;
+    ctx.fillStyle=`rgba(${[20,35][li]},${[40,65][li]},${[80,110][li]},${[0.15,0.1][li]})`;
+    ctx.beginPath();ctx.moveTo(0,C.height);
+    for(let x=0;x<=C.width+80;x+=80){ctx.lineTo(x,C.height*0.5+Math.sin((x+oy)*0.007)*80+Math.sin((x*0.013+li*2))*50);}
+    ctx.lineTo(C.width,C.height);ctx.closePath();ctx.fill();
+  });
+}
+
+function drawPlatforms(camY){
+  G.plats.forEach((p,i)=>{
+    const sy=p.y-camY;
+    if(sy<-30||sy>C.height+30) return;
+    const near=(G.p1.nearIdx===i)||(G.p2&&G.p2.nearIdx===i);
+    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(p.x+4,sy+p.h,p.w,6);
+    const pg=ctx.createLinearGradient(p.x,sy,p.x,sy+p.h);
+    pg.addColorStop(0,near?'rgba(100,220,255,0.92)':'rgba(55,100,170,0.88)');
+    pg.addColorStop(1,near?'rgba(50,160,210,0.8)':'rgba(25,55,110,0.7)');
+    ctx.fillStyle=pg;ctx.beginPath();ctx.roundRect(p.x,sy,p.w,p.h,5);ctx.fill();
+    if(near)ctx.shadowBlur=16,ctx.shadowColor='#4ff7f0';
+    ctx.strokeStyle=near?'rgba(80,240,230,0.85)':'rgba(80,140,220,0.35)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.roundRect(p.x,sy,p.w,p.h,5);ctx.stroke();ctx.shadowBlur=0;
+  });
+}
+
+function loop(){
+  if(!G)return;
+  const leadY=G.p2?Math.min(G.p1.y,G.p2.y):G.p1.y;
+  G.camY+=(leadY-C.height*0.45-G.camY)*0.07;
+  drawBG(G.camY);
+  drawPlatforms(G.camY);
+  if(!G.over){
+    G.p1.update(G.plats,G.camY);G.p1.draw(G.camY);
+    if(G.p2){G.p2.update(G.plats,G.camY);G.p2.draw(G.camY);}
+    // Generate more platforms
+    const topP=G.plats.reduce((a,b)=>a.y<b.y?a:b);
+    if(topP.y-G.camY>-C.height*0.5) G.plats.push(...genPlats(30,topP.y-150));
+    // Win check
+    if(G.mode==='race'){
+      if(G.p1.alt>=WIN_ALT){G.over=true;G.winner='🔵 Player 1';}
+      if(G.p2&&G.p2.alt>=WIN_ALT){G.over=true;G.winner='🔴 Player 2';}
+    }
+  }
+  document.getElementById('alt1').textContent=G.p1.alt+'m';
+  if(G.p2) document.getElementById('alt2').textContent=G.p2.alt+'m';
+  if(G.over){
+    ctx.fillStyle='rgba(10,18,30,0.85)';ctx.fillRect(0,0,C.width,C.height);
+    ctx.font='bold 70px "Fredoka One"';ctx.textAlign='center';ctx.fillStyle='#f7c44f';
+    ctx.fillText((G.winner||'')+(G.winner?' Wins!':''),C.width/2,C.height/2-20);
+    ctx.font='28px Nunito';ctx.fillStyle='#5070a0';ctx.fillText('Press R to restart',C.width/2,C.height/2+40);
+  }
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

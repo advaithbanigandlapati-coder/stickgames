@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StickGames - Ultimate Minigame Collection</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        .background-gradient {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(236,72,153,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 90%, rgba(245,158,11,0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; position: relative; z-index: 1; }
+        .main-header { text-align: center; margin-bottom: 60px; animation: fadeInDown 0.8s ease; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .logo { font-size: clamp(3rem, 8vw, 5rem); font-weight: 900; letter-spacing: -2px; margin-bottom: 10px; line-height: 1; }
+        .logo-stick { background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .logo-games { color: var(--text-light); }
+        .tagline { font-size: 1.1rem; color: var(--text-muted); font-weight: 300; letter-spacing: 1px; }
+        .games-section { margin-bottom: 80px; }
+        .section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .section-header i { width: 32px; height: 32px; color: var(--accent); }
+        .section-header h2 { font-size: 1.8rem; font-weight: 700; letter-spacing: 1px; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .game-grid.secondary { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+        .game-card { position: relative; background: var(--bg-card); border-radius: 20px; padding: 30px; text-decoration: none; color: var(--text-light); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; cursor: pointer; display: block; }
+        .game-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(236,72,153,0.1)); opacity: 0; transition: opacity 0.3s ease; }
+        .game-card:hover::before { opacity: 1; }
+        .game-card:hover { transform: translateY(-10px) scale(1.02); border-color: rgba(99,102,241,0.5); box-shadow: 0 20px 60px rgba(99,102,241,0.3); }
+        .game-card.featured { padding: 40px; }
+        .card-shine { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); transform: translateX(-100%) translateY(-100%); transition: transform 0.6s; }
+        .game-card:hover .card-shine { transform: translateX(100%) translateY(100%); }
+        .game-icon-wrapper { width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 20px; position: relative; z-index: 1; transition: transform 0.3s ease; }
+        .game-icon-wrapper.small { width: 60px; height: 60px; margin-bottom: 15px; }
+        .game-card:hover .game-icon-wrapper { transform: scale(1.1) rotate(5deg); }
+        .game-icon { width: 40px; height: 40px; color: white; }
+        .game-icon-wrapper.small .game-icon { width: 30px; height: 30px; }
+        .game-card h3 { font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; position: relative; z-index: 1; }
+        .game-card p { color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; position: relative; z-index: 1; }
+        .tags { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; position: relative; z-index: 1; }
+        .tag { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+        .tag i { width: 14px; height: 14px; }
+        .play-button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; font-weight: 600; letter-spacing: 1px; transition: all 0.3s ease; position: relative; z-index: 1; }
+        .play-button i { width: 18px; height: 18px; }
+        .game-card:hover .play-button { background: linear-gradient(135deg, var(--secondary), var(--accent)); transform: scale(1.05); box-shadow: 0 10px 30px rgba(236,72,153,0.4); }
+        .main-footer { text-align: center; padding: 40px 20px; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.05); margin-top: 60px; }
+        @media (max-width: 768px) { .game-grid, .game-grid.secondary { grid-template-columns: 1fr; } .logo { font-size: 2.5rem; } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        .game-card.featured:nth-child(1) { animation: float 6s ease-in-out infinite; }
+        .game-card.featured:nth-child(2) { animation: float 6s ease-in-out infinite; animation-delay: -2s; }
+        .game-card.featured:nth-child(3) { animation: float 6s ease-in-out infinite; animation-delay: -4s; }
+    </style>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    <div class="particles" id="particles-container"></div>
+
+    <div class="container">
+        <header class="main-header">
+            <h1 class="logo">
+                <span class="logo-stick">STICK</span><span class="logo-games">GAMES</span>
+            </h1>
+            <p class="tagline">8 Epic Minigames &bull; Instant Play &bull; Maximum Fun</p>
+        </header>
+
+        <section class="games-section">
+            <div class="section-header">
+                <i data-lucide="zap"></i>
+                <h2>STAPLE GAMES</h2>
+            </div>
+            <div class="game-grid">
+                <a href="games/stickbox-fight.html" class="game-card featured">
+                    <div class="card-shine"></div>
+                    <div class="game-icon-wrapper">
+                        <i data-lucide="swords" class="game-icon"></i>
+                    </div>
+                    <h3>StickBox Fight</h3>
+                    <p>Physics-based combat sandbox with explosive abilities, powders, and pure chaos</p>
+                    <div class="tags">
+                        <span class="tag"><i data-lucide="users"></i> Local 2P</span>
+                        <span class="tag"><i data-lucide="sparkles"></i> Abilities</span>
+                    </div>
+                    <div class="play-button"><i data-lucide="play"></i> PLAY NOW</div>
+                </a>
+                <a href="games/stick-climb.html" class="game-card featured">
+                    <div class="card-shine"></div>
+                    <div class="game-icon-wrapper">
+                        <i data-lucide="mountain" class="game-icon"></i>
+                    </div>
+                    <h3>StickClimb</h3>
+                    <p>Swing and climb with momentum physics. Race to the summit or challenge yourself</p>
+                    <div class="tags">
+                        <span class="tag"><i data-lucide="user"></i> Single</span>
+                        <span class="tag"><i data-lucide="flag"></i> Race</span>
+                    </div>
+                    <div class="play-button"><i data-lucide="play"></i> PLAY NOW</div>
+                </a>
+                <a href="games/sword-duel.html" class="game-card featured">
+                    <div class="card-shine"></div>
+                    <div class="game-icon-wrapper">
+                        <i data-lucide="sword" class="game-icon"></i>
+                    </div>
+                    <h3>Sword Duel</h3>
+                    <p>Satisfying hack-and-slash combat with perfect timing, combos, and epic duels</p>
+                    <div class="tags">
+                        <span class="tag"><i data-lucide="target"></i> Showdown</span>
+                        <span class="tag"><i data-lucide="swords"></i> VS Mode</span>
+                    </div>
+                    <div class="play-button"><i data-lucide="play"></i> PLAY NOW</div>
+                </a>
+            </div>
+        </section>
+
+        <section class="games-section">
+            <div class="section-header">
+                <i data-lucide="gamepad-2"></i>
+                <h2>MORE EPIC GAMES</h2>
+            </div>
+            <div class="game-grid secondary">
+                <a href="games/stick-basket.html" class="game-card">
+                    <div class="game-icon-wrapper small">
+                        <i data-lucide="circle-dot" class="game-icon"></i>
+                    </div>
+                    <h3>StickBasket</h3>
+                    <p>Ragdoll basketball with goofy physics and mayhem</p>
+                    <span class="tag"><i data-lucide="wind"></i> Physics</span>
+                </a>
+                <a href="games/stick-build.html" class="game-card">
+                    <div class="game-icon-wrapper small">
+                        <i data-lucide="zap" class="game-icon"></i>
+                    </div>
+                    <h3>StickBuild</h3>
+                    <p>Exhilarating parkour action runner</p>
+                    <span class="tag"><i data-lucide="move-right"></i> Runner</span>
+                </a>
+                <a href="games/stick-smash.html" class="game-card">
+                    <div class="game-icon-wrapper small">
+                        <i data-lucide="hammer" class="game-icon"></i>
+                    </div>
+                    <h3>StickSmash</h3>
+                    <p>Platform fighter mayhem for 2 players</p>
+                    <span class="tag"><i data-lucide="flame"></i> Brawler</span>
+                </a>
+                <a href="games/geodash.html" class="game-card">
+                    <div class="game-icon-wrapper small">
+                        <i data-lucide="diamond" class="game-icon"></i>
+                    </div>
+                    <h3>GeoDash</h3>
+                    <p>Rhythm-based obstacle course with 4 levels</p>
+                    <span class="tag"><i data-lucide="music"></i> Rhythm</span>
+                </a>
+                <a href="games/stick100.html" class="game-card">
+                    <div class="game-icon-wrapper small">
+                        <i data-lucide="shield" class="game-icon"></i>
+                    </div>
+                    <h3>Stick100</h3>
+                    <p>Survive 100 increasingly brutal enemy waves</p>
+                    <span class="tag"><i data-lucide="crosshair"></i> Survival</span>
+                </a>
+            </div>
+        </section>
+
+        <footer class="main-footer">
+            <p>Built with passion for maximum fun &bull; All games playable instantly in browser</p>
+        </footer>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Particle system
+        const container = document.getElementById('particles-container');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        container.appendChild(canvas);
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const particles = Array.from({ length: 50 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            r: Math.random() * 2 + 1,
+            o: Math.random() * 0.4 + 0.1
+        }));
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(99,102,241,${p.o})`;
+                ctx.fill();
+            });
+            particles.forEach((p1, i) => {
+                particles.slice(i + 1).forEach(p2 => {
+                    const d = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                    if (d < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(99,102,241,${0.08 * (1 - d / 150)})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                });
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // 3D card tilt
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const r = card.getBoundingClientRect();
+                const x = e.clientX - r.left, y = e.clientY - r.top;
+                card.style.transform = `perspective(1000px) rotateX(${(y - r.height/2)/20}deg) rotateY(${(r.width/2 - x)/20}deg) translateY(-10px) scale(1.02)`;
+            });
+            card.addEventListener('mouseleave', () => card.style.transform = '');
+        });
+    </script>
+</body>
+</html>
