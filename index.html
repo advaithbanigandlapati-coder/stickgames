@@ -36,6 +36,31 @@ body{
 }
 #cursor.click{transform:translate(-50%,-50%) scale(0.8);}
 
+/* Music Toggle */
+.music-toggle{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
+  border:2px solid rgba(255,255,255,0.2);
+  border-radius:50%;
+  width:50px;
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.5rem;
+  cursor:none;
+  transition:all 0.3s;
+}
+.music-toggle:hover{
+  border-color:rgba(65,105,225,0.6);
+  background:rgba(65,105,225,0.2);
+  transform:scale(1.1);
+}
+
 /* Animated Space Background */
 .space{
   position:fixed;
@@ -240,6 +265,7 @@ header{
 .card:nth-child(3){animation-delay:0.3s;}
 .card:nth-child(4){animation-delay:0.4s;}
 .card:nth-child(5){animation-delay:0.5s;}
+.card:nth-child(6){animation-delay:0.6s;}
 
 @keyframes cardFadeIn{
   from{opacity:0;transform:translateY(30px);}
@@ -371,10 +397,30 @@ footer{
   letter-spacing:3px;
   font-weight:600;
 }
+
+footer a{
+  color:#4169E1;
+  text-decoration:none;
+  font-size:0.8rem;
+  letter-spacing:2px;
+  margin-top:15px;
+  display:inline-block;
+  transition:color 0.3s;
+}
+
+footer a:hover{
+  color:#FF1493;
+}
 </style>
 </head>
 <body>
 <div id="cursor"></div>
+
+<!-- Background Music -->
+<audio id="bgMusic" loop>
+  <source src="assets/menu-music.mp3" type="audio/mpeg">
+</audio>
+<div class="music-toggle" id="musicToggle" onclick="toggleMusic()">🔇</div>
 
 <div class="space"></div>
 <canvas class="stars" id="stars"></canvas>
@@ -429,16 +475,16 @@ footer{
         <div class="play-btn">▶ START CLIMB</div>
       </a>
 
-      <a href="games/sword-duel.html" class="card">
-        <span class="card-icon">🗡️</span>
-        <h3>SWORD DUEL</h3>
-        <p>Tactical blade combat. Master timing, combos, and clashes. Custom controls included.</p>
+      <a href="games/stickbox.html" class="card">
+        <span class="card-icon">📦</span>
+        <h3>STICKBOX</h3>
+        <p>Element-powered sandbox. Draw paths, harness powers, and create chaos with your own characters.</p>
         <div class="tags">
-          <span class="tag">2P / AI</span>
-          <span class="tag">COMBOS</span>
-          <span class="tag">CLASH</span>
+          <span class="tag">SANDBOX</span>
+          <span class="tag">ELEMENTS</span>
+          <span class="tag">CREATIVE</span>
         </div>
-        <div class="play-btn">▶ DRAW BLADE</div>
+        <div class="play-btn">▶ ENTER SANDBOX</div>
       </a>
     </div>
   </div>
@@ -446,6 +492,13 @@ footer{
   <div class="section">
     <h2 class="section-header">ARCADE ZONE</h2>
     <div class="grid sub">
+      <a href="games/sword-duel.html" class="card sm">
+        <span class="card-icon">🗡️</span>
+        <h3>SWORD DUEL</h3>
+        <p>Tactical blade combat with combos and clashes</p>
+        <span class="tag">2P / AI</span>
+      </a>
+
       <a href="games/stick-basket.html" class="card sm">
         <span class="card-icon">🏀</span>
         <h3>BASKET</h3>
@@ -458,13 +511,6 @@ footer{
         <h3>BUILD</h3>
         <p>First-person rooftop parkour runner</p>
         <span class="tag">1ST PERSON</span>
-      </a>
-
-      <a href="games/stick-smash.html" class="card sm">
-        <span class="card-icon">💥</span>
-        <h3>SMASH</h3>
-        <p>Platform fighter with unique characters</p>
-        <span class="tag">CHARACTERS</span>
       </a>
 
       <a href="games/geodash.html" class="card sm">
@@ -483,10 +529,40 @@ footer{
     </div>
   </div>
 
-  <footer>STICKGAMES © 2026 · CRAFTED BY ADVAITH</footer>
+  <footer>
+    STICKGAMES © 2026 · CRAFTED BY ADVAITH<br>
+    <a href="changelog.html">📋 CHANGELOG</a>
+  </footer>
 </div>
 
 <script>
+// Music control
+const music=document.getElementById('bgMusic');
+const musicBtn=document.getElementById('musicToggle');
+let musicPlaying=false;
+
+function toggleMusic(){
+  if(musicPlaying){
+    music.pause();
+    musicBtn.textContent='🔇';
+    musicPlaying=false;
+  }else{
+    music.play().catch(e=>console.log('Music autoplay blocked'));
+    musicBtn.textContent='🔊';
+    musicPlaying=true;
+  }
+}
+
+// Auto-play attempt (modern browsers block this)
+document.addEventListener('click',()=>{
+  if(!musicPlaying){
+    music.play().then(()=>{
+      musicBtn.textContent='🔊';
+      musicPlaying=true;
+    }).catch(()=>{});
+  }
+},{once:true});
+
 // Cursor with simple circle face
 const cur=document.getElementById('cursor');
 cur.innerHTML=`<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#666" stroke="#999" stroke-width="2"/><circle cx="11" cy="13" r="2.5" fill="#ddd"/><circle cx="21" cy="13" r="2.5" fill="#ddd"/></svg>`;
