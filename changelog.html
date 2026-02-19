@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHANGELOG · STICKGAMES</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234169E1'/><circle cx='35' cy='40' r='5' fill='white'/><circle cx='65' cy='40' r='5' fill='white'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Orbitron',monospace;
+  background:#000;
+  color:#fff;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+.space{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(ellipse at 15% 25%, rgba(65,105,225,0.15), transparent 50%),
+              radial-gradient(ellipse at 85% 75%, rgba(255,20,147,0.12), transparent 50%),
+              #000;
+  z-index:0;
+}
+
+.stars{position:fixed;inset:0;z-index:1;}
+
+.container{
+  position:relative;
+  z-index:10;
+  max-width:900px;
+  margin:0 auto;
+  padding:60px 40px;
+}
+
+.back-btn{
+  display:inline-block;
+  background:rgba(255,255,255,0.05);
+  border:2px solid rgba(65,105,225,0.3);
+  border-radius:12px;
+  padding:12px 24px;
+  color:#4169E1;
+  text-decoration:none;
+  font-weight:800;
+  letter-spacing:2px;
+  transition:all 0.3s;
+  margin-bottom:40px;
+  font-size:0.9rem;
+}
+
+.back-btn:hover{
+  border-color:#4169E1;
+  background:rgba(65,105,225,0.15);
+  transform:translateX(-5px);
+}
+
+h1{
+  font-size:3.5rem;
+  font-weight:900;
+  letter-spacing:6px;
+  background:linear-gradient(135deg, #4169E1, #FF1493);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:20px;
+  text-transform:uppercase;
+}
+
+.subtitle{
+  color:#8B9DC3;
+  font-size:1.1rem;
+  letter-spacing:3px;
+  margin-bottom:60px;
+}
+
+.update{
+  background:rgba(255,255,255,0.03);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.1);
+  border-left:4px solid #4169E1;
+  border-radius:16px;
+  padding:30px;
+  margin-bottom:30px;
+  transition:all 0.3s;
+}
+
+.update:hover{
+  border-color:rgba(65,105,225,0.5);
+  box-shadow:0 10px 40px rgba(65,105,225,0.2);
+  transform:translateY(-3px);
+}
+
+.update-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.version{
+  font-size:1.5rem;
+  font-weight:900;
+  color:#4169E1;
+  letter-spacing:2px;
+}
+
+.date{
+  color:#8B9DC3;
+  font-size:0.85rem;
+  letter-spacing:2px;
+}
+
+.category{
+  display:inline-block;
+  padding:6px 12px;
+  background:rgba(65,105,225,0.15);
+  border:1px solid rgba(65,105,225,0.3);
+  border-radius:20px;
+  font-size:0.7rem;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#4169E1;
+  margin-right:8px;
+  margin-bottom:8px;
+  text-transform:uppercase;
+}
+
+.category.new{background:rgba(0,255,150,0.15);border-color:rgba(0,255,150,0.3);color:#0f8;}
+.category.fix{background:rgba(255,100,100,0.15);border-color:rgba(255,100,100,0.3);color:#f88;}
+.category.improve{background:rgba(255,200,0,0.15);border-color:rgba(255,200,0,0.3);color:#fc0;}
+
+.changes{
+  list-style:none;
+  padding:0;
+}
+
+.changes li{
+  padding-left:30px;
+  position:relative;
+  margin-bottom:12px;
+  color:#A0AEC0;
+  line-height:1.6;
+  font-family:sans-serif;
+  font-weight:400;
+}
+
+.changes li::before{
+  content:'▸';
+  position:absolute;
+  left:0;
+  color:#4169E1;
+  font-weight:900;
+}
+</style>
+</head>
+<body>
+<div class="space"></div>
+<canvas class="stars" id="stars"></canvas>
+
+<div class="container">
+  <a href="index.html" class="back-btn">← BACK TO MENU</a>
+  
+  <h1>CHANGELOG</h1>
+  <p class="subtitle">Track updates, improvements, and new features</p>
+
+  <!-- Latest Update -->
+  <div class="update">
+    <div class="update-header">
+      <div class="version">v2.1.0</div>
+      <div class="date">FEB 18, 2026</div>
+    </div>
+    <div>
+      <span class="category new">NEW</span>
+      <span class="category improve">IMPROVED</span>
+    </div>
+    <ul class="changes">
+      <li><strong>StickBox Fight ULTIMATE:</strong> Complete AAA overhaul with 36 abilities (30 regular + 6 specials)</li>
+      <li><strong>Dual Cursor System:</strong> P1 (WASD + F) and P2 (Arrows + L) menu navigation</li>
+      <li><strong>6 Unique Characters:</strong> SONIC, TITAN, VIPER, BLITZ, TANK, FURY - each with unique stats</li>
+      <li><strong>5 Dynamic Stages:</strong> VOID, LAVA PIT, STORM, CYBER, ARENA with hazards</li>
+      <li><strong>AI Difficulty:</strong> Easy, Medium, Hard with adaptive behavior</li>
+      <li><strong>Combat Systems:</strong> Combo multipliers, damage numbers, hit freeze, perfect dodge, super meter</li>
+      <li><strong>Advanced Music:</strong> 5-voice polyphony with chord progressions and melody variations</li>
+      <li><strong>Round System:</strong> Best of 1, 3, or 5 with persistent stats</li>
+      <li><strong>Power-ups:</strong> HP packs, damage boosts, speed boosts spawn every 15 seconds</li>
+      <li><strong>Post-Processing:</strong> Chromatic aberration, screen shake, low HP vignette</li>
+      <li><strong>Menu Music:</strong> Looping background music with toggle button</li>
+      <li><strong>StickBox:</strong> New element-powered sandbox game added to main arena</li>
+      <li><strong>Sword Duel:</strong> Moved to Arcade Zone</li>
+    </ul>
+  </div>
+
+  <!-- v2.0.0 -->
+  <div class="update">
+    <div class="update-header">
+      <div class="version">v2.0.0</div>
+      <div class="date">FEB 17, 2026</div>
+    </div>
+    <div>
+      <span class="category new">NEW</span>
+      <span class="category fix">FIX</span>
+    </div>
+    <ul class="changes">
+      <li><strong>StickBox Fight V2:</strong> Complete redesign with 2.5D graphics and galaxy theme</li>
+      <li>15 unique abilities with customizable keybinds</li>
+      <li>Fixed ability selection overflow</li>
+      <li>Improved physics and collision detection</li>
+      <li>Status effects: freeze, shield reflect, rage mode</li>
+      <li>Glassmorphism UI panels</li>
+    </ul>
+  </div>
+
+  <!-- v1.5.0 -->
+  <div class="update">
+    <div class="update-header">
+      <div class="version">v1.5.0</div>
+      <div class="date">FEB 15, 2026</div>
+    </div>
+    <div>
+      <span class="category new">NEW</span>
+    </div>
+    <ul class="changes">
+      <li>GeoDash: 10 levels with 4 game modes</li>
+      <li>Stick100: Wave survival with upgrades</li>
+      <li>Enhanced menu animations</li>
+      <li>Custom cursor system</li>
+    </ul>
+  </div>
+
+  <!-- v1.0.0 -->
+  <div class="update">
+    <div class="update-header">
+      <div class="version">v1.0.0</div>
+      <div class="date">FEB 10, 2026</div>
+    </div>
+    <div>
+      <span class="category new">NEW</span>
+    </div>
+    <ul class="changes">
+      <li>Initial launch with 5 core games</li>
+      <li>StickBox Fight, StickClimb, Sword Duel</li>
+      <li>Stick Basket, Stick Build</li>
+      <li>Professional space-themed UI</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// Animated stars
+const sc=document.getElementById('stars'),sx=sc.getContext('2d');
+sc.width=window.innerWidth;
+sc.height=window.innerHeight;
+
+const stars=Array.from({length:200},()=>({
+  x:Math.random()*sc.width,
+  y:Math.random()*sc.height,
+  r:Math.random()*2,
+  o:Math.random(),
+  v:(Math.random()-0.5)*0.004
+}));
+
+function animateStars(){
+  sx.clearRect(0,0,sc.width,sc.height);
+  stars.forEach(s=>{
+    s.o+=s.v;
+    if(s.o>1||s.o<0.1)s.v*=-1;
+    sx.globalAlpha=s.o;
+    sx.fillStyle=s.r>1.2?'#4169E1':'#ffffff';
+    sx.beginPath();
+    sx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sx.fill();
+  });
+  requestAnimationFrame(animateStars);
+}
+animateStars();
+
+window.addEventListener('resize',()=>{
+  sc.width=window.innerWidth;
+  sc.height=window.innerHeight;
+});
+</script>
+</body>
+</html>
