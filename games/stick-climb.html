@@ -348,6 +348,8 @@ canvas{display:block;}
   <span style="color:#222">|</span>
   <span>🚀 <span class="sk">S+↓</span></span>
   <span style="color:#222">|</span>
+  <span>🪝 <span class="sk">G</span>RECALL</span>
+  <span style="color:#222">|</span>
   <span><span class="sk">V</span>CAM <span class="sk">ESC</span>PAUSE</span>
 </div>
 
@@ -1237,6 +1239,9 @@ document.addEventListener('keydown', e=>{
     clearTimeout(G._camLabelTimer);
     G._camLabelTimer = setTimeout(()=>{ $('camModeLabel').style.opacity='0'; }, 2000);
   }
+  if((e.key === 'g' || e.key === 'G') && G.phase==='playing'){
+    recallArms();
+  }
 });
 
 document.addEventListener('keyup', e=>{
@@ -1247,6 +1252,53 @@ document.addEventListener('keyup', e=>{
   if(e.key === 'Shift') releaseGrab(G.left);
   if(e.key === 'Enter') releaseGrab(G.right);
 });
+
+// ─── RECALL ARMS (G key) ───────────────────────────────
+// Snaps both free arms to the wall — finds nearest hold above each arm
+// and teleports the arm there, or just snaps z to wall if no hold found.
+function recallArms(){
+  for(const hand of [G.left, G.right]){
+    if(hand.hooked) continue; // already hooked, leave it
+
+    // Find closest hold within a generous radius, preferring holds above
+    let best = null, bestScore = Infinity;
+    for(const h of G.holds){
+      if(h.userData.grabbed) continue;
+      const dx = h.position.x - G.body.pos.x;
+      const dy = h.position.y - G.body.pos.y;
+      const dz = h.position.z - G.body.pos.z;
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      // Score: prefer close AND above the body
+      const score = dist - (dy > 0 ? dy * 0.4 : 0);
+      if(dist < 28 && score < bestScore){
+        best = h; bestScore = score;
+      }
+    }
+
+    if(best){
+      // Teleport arm to just in front of the hold
+      hand.pos.set(best.position.x, best.position.y, best.position.z + 1.5);
+    } else {
+      // No hold nearby — just snap z back to wall
+      hand.pos.z = -5;
+      hand.pos.y = G.body.pos.y + 6;
+    }
+    hand.vel.set(0, 0, 0);
+    hand.swingMom.set(0, 0, 0);
+  }
+
+  // Flash + sound feedback
+  $('flash').style.opacity = 0.2;
+  setTimeout(()=>$('flash').style.opacity=0, 100);
+  playSFX(440, 0.12, 'sine', 0.15);
+  playSFX(660, 0.08, 'sine', 0.1);
+
+  // Show label
+  $('camModeLabel').textContent = '🪝 ARMS RECALLED';
+  $('camModeLabel').style.opacity = '1';
+  clearTimeout(G._camLabelTimer);
+  G._camLabelTimer = setTimeout(()=>{ $('camModeLabel').style.opacity='0'; }, 1200);
+}
 
 function pauseGame(){
   G.paused = true;
