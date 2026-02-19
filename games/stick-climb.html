@@ -3,433 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CROWBAR CLIMBERS</title>
+<title>STICK CLIMB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --orange:#FF6B00;
-  --red:#FF2200;
-  --cyan:#00FFE5;
-  --purple:#9B4DFF;
-  --gold:#FFD000;
-  --dark:#05030A;
+  --c1:#7B4FFF;--c2:#00D4FF;--c3:#FF6B35;--c4:#FF2255;
+  --gold:#FFD000;--dark:#03020A;
 }
-
-body{
-  background:#000;
-  overflow:hidden;
-  font-family:'Bebas Neue',sans-serif;
-  cursor:none;
-}
-
+body{background:#000;overflow:hidden;font-family:'Orbitron',sans-serif;cursor:none;}
 canvas{display:block;}
 
-/* CUSTOM CURSOR */
-#cursor{
-  position:fixed;width:14px;height:14px;
-  border:2px solid var(--orange);border-radius:50%;
-  pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  background:rgba(255,107,0,0.15);
-  box-shadow:0 0 12px var(--orange),0 0 4px var(--orange);
-  transition:transform 0.1s;
-}
-#cursor::after{
-  content:'';position:absolute;top:50%;left:50%;
-  width:3px;height:3px;background:var(--orange);
-  border-radius:50%;transform:translate(-50%,-50%);
-}
+#cursor{position:fixed;width:12px;height:12px;border:1.5px solid var(--c2);border-radius:50%;
+  pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+  background:rgba(0,212,255,0.1);box-shadow:0 0 8px var(--c2);}
+#cursor::after{content:'';position:absolute;top:50%;left:50%;width:3px;height:3px;
+  background:var(--c2);border-radius:50%;transform:translate(-50%,-50%);}
 
-/* CHROME VIGNETTE */
-#vignette{
-  position:fixed;inset:0;pointer-events:none;z-index:50;
-  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.85) 100%);
-}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:50;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.92) 100%);}
+#scanlines{position:fixed;inset:0;pointer-events:none;z-index:51;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.05) 3px,rgba(0,0,0,0.05) 6px);opacity:0.3;}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:53;
+  background:rgba(123,79,255,0.4);opacity:0;transition:opacity 0.05s;}
+#chroma{position:fixed;inset:0;pointer-events:none;z-index:52;opacity:0;}
+#cpFlash{position:fixed;inset:0;pointer-events:none;z-index:55;
+  background:rgba(0,212,255,0.1);opacity:0;border:2px solid rgba(0,212,255,0.4);transition:opacity 0.15s;}
+#cpMsg{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:56;
+  pointer-events:none;font-size:1.4rem;letter-spacing:8px;color:var(--c2);
+  text-shadow:0 0 30px var(--c2);opacity:0;transition:opacity 0.2s;font-weight:700;}
 
-/* SCANLINES */
-#scanlines{
-  position:fixed;inset:0;pointer-events:none;z-index:51;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
-  opacity:0.4;
-}
-
-/* CHROMATIC ABERRATION OVERLAY (JS animated) */
-#chroma{
-  position:fixed;inset:0;pointer-events:none;z-index:52;
-  opacity:0;transition:opacity 0.1s;
-  background:transparent;
-}
-
-/* SCREEN FLASH */
-#flash{
-  position:fixed;inset:0;pointer-events:none;z-index:53;
-  background:rgba(255,107,0,0.4);opacity:0;
-  transition:opacity 0.05s;
-}
-
-/* ─── MENU ──────────────────────────────────────────── */
-#menu{
-  position:fixed;inset:0;z-index:200;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--dark);
-}
+/* MENU */
+#menu{position:fixed;inset:0;z-index:200;display:flex;align-items:center;
+  justify-content:center;background:var(--dark);}
 #menu.hide{display:none;}
+.menu-bg{position:absolute;inset:0;background:
+  radial-gradient(ellipse 70% 50% at 50% 110%,rgba(123,79,255,0.2) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 15% 25%,rgba(0,212,255,0.1) 0%,transparent 55%),
+  radial-gradient(ellipse 40% 30% at 85% 15%,rgba(255,34,85,0.08) 0%,transparent 50%);}
+.menu-grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(123,79,255,0.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(123,79,255,0.05) 1px,transparent 1px);
+  background-size:50px 50px;
+  mask-image:radial-gradient(ellipse at center,black 20%,transparent 75%);}
+.menu-inner{position:relative;z-index:1;text-align:center;max-width:620px;padding:0 24px;}
+.menu-eyebrow{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:5px;
+  color:var(--c2);margin-bottom:10px;opacity:0.6;text-transform:uppercase;}
+.menu-title{font-size:clamp(4.5rem,11vw,8rem);letter-spacing:6px;line-height:0.88;color:#fff;
+  font-weight:900;text-shadow:0 0 80px rgba(123,79,255,0.6),0 0 30px rgba(0,212,255,0.3),
+  3px 3px 0 rgba(123,79,255,0.4);margin-bottom:6px;}
+.menu-title .accent{color:var(--c1);}
+.menu-sub{font-family:'Space Mono',monospace;font-size:0.68rem;color:#3a3a5a;
+  letter-spacing:4px;margin-bottom:32px;}
+.menu-controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:28px;}
+.ctrl-card{background:rgba(123,79,255,0.05);border:1px solid rgba(123,79,255,0.18);
+  border-radius:6px;padding:14px;text-align:left;}
+.ctrl-card-label{font-family:'Space Mono',monospace;font-size:0.58rem;letter-spacing:3px;
+  color:var(--c2);margin-bottom:7px;text-transform:uppercase;}
+.ctrl-card-keys{font-family:'Space Mono',monospace;font-size:0.68rem;color:#666;line-height:1.9;}
+.ctrl-card-keys b{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);
+  border-radius:3px;padding:1px 5px;color:#bbb;font-size:0.65rem;}
+.menu-btn-row{display:flex;gap:10px;justify-content:center;margin-bottom:12px;}
+.play-btn{padding:14px 52px;background:linear-gradient(135deg,var(--c1),var(--c4));
+  border:none;border-radius:5px;color:#fff;font-family:'Orbitron',sans-serif;
+  font-size:1.15rem;font-weight:700;letter-spacing:5px;cursor:none;transition:all 0.25s;
+  box-shadow:0 0 40px rgba(123,79,255,0.5),0 6px 20px rgba(0,0,0,0.4);text-transform:uppercase;}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 0 60px rgba(123,79,255,0.8);}
+.levels-btn{padding:14px 28px;background:transparent;border:1px solid rgba(0,212,255,0.35);
+  border-radius:5px;color:var(--c2);font-family:'Orbitron',sans-serif;font-size:0.95rem;
+  font-weight:700;letter-spacing:4px;cursor:none;transition:all 0.25s;}
+.levels-btn:hover{background:rgba(0,212,255,0.07);border-color:var(--c2);}
+.menu-tagline{font-family:'Space Mono',monospace;font-size:0.58rem;color:#2a2a3a;letter-spacing:2px;}
 
-.menu-bg{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 100%,rgba(255,107,0,0.12) 0%,transparent 60%),
-    radial-gradient(ellipse 40% 40% at 20% 30%,rgba(155,77,255,0.08) 0%,transparent 50%),
-    radial-gradient(ellipse 40% 40% at 80% 20%,rgba(0,255,229,0.06) 0%,transparent 50%);
-}
+/* LEVELS SCREEN */
+#levelsScreen{position:fixed;inset:0;z-index:205;display:none;align-items:center;
+  justify-content:center;background:var(--dark);}
+#levelsScreen.show{display:flex;}
+.levels-bg{position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 60% at 50% 50%,rgba(123,79,255,0.1) 0%,transparent 65%);}
+.levels-inner{position:relative;z-index:1;text-align:center;max-width:680px;padding:0 24px;}
+.levels-title{font-size:2.4rem;font-weight:900;letter-spacing:6px;color:#fff;
+  margin-bottom:4px;text-shadow:0 0 30px rgba(123,79,255,0.5);}
+.levels-sub{font-family:'Space Mono',monospace;font-size:0.58rem;color:#333;
+  letter-spacing:3px;margin-bottom:28px;}
+.levels-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.stage-card{background:rgba(123,79,255,0.05);border:1px solid rgba(123,79,255,0.18);
+  border-radius:8px;padding:20px;text-align:left;cursor:none;transition:all 0.25s;
+  position:relative;overflow:hidden;}
+.stage-card.unlocked:hover{background:rgba(123,79,255,0.13);border-color:var(--c1);
+  transform:translateY(-2px);box-shadow:0 8px 30px rgba(123,79,255,0.25);}
+.stage-card.locked{opacity:0.35;filter:grayscale(0.5);cursor:default;}
+.stage-card-num{font-family:'Space Mono',monospace;font-size:0.55rem;color:var(--c2);
+  letter-spacing:3px;margin-bottom:8px;}
+.stage-card-name{font-size:1rem;font-weight:700;letter-spacing:3px;color:#fff;margin-bottom:4px;}
+.stage-card-range{font-family:'Space Mono',monospace;font-size:0.6rem;color:#444;
+  letter-spacing:2px;margin-bottom:10px;}
+.stage-card-action{font-family:'Space Mono',monospace;font-size:0.6rem;
+  color:var(--c2);letter-spacing:2px;}
+.stage-card.locked .stage-card-action{color:#333;}
+.stage-card-lock{position:absolute;top:12px;right:14px;font-size:1.1rem;opacity:0.4;}
+.stage-card-bar{position:absolute;bottom:0;left:0;height:2px;width:0%;
+  background:linear-gradient(90deg,var(--c1),var(--c2));transition:width 0.35s;}
+.stage-card.unlocked:hover .stage-card-bar{width:100%;}
+.back-btn{font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:3px;
+  color:#333;background:none;border:none;cursor:none;transition:color 0.2s;padding:8px 16px;}
+.back-btn:hover{color:var(--c2);}
 
-.menu-grid{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(255,107,0,0.06) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,107,0,0.06) 1px,transparent 1px);
-  background-size:40px 40px;
-  mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);
-}
+/* PAUSE */
+#pauseScreen{position:fixed;inset:0;z-index:190;background:rgba(3,2,10,0.95);
+  backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;}
+#pauseScreen.show{display:flex;}
+.pause-content{text-align:center;}
+.pause-title{font-size:3.5rem;font-weight:900;letter-spacing:8px;color:#fff;
+  text-shadow:0 0 40px rgba(123,79,255,0.5);margin-bottom:10px;}
+.pause-sub{font-family:'Space Mono',monospace;font-size:0.65rem;color:#333;
+  letter-spacing:4px;margin-bottom:32px;}
 
-.menu-inner{
-  position:relative;z-index:1;
-  text-align:center;max-width:640px;padding:0 20px;
-}
+/* DEATH */
+#deathScreen{position:fixed;inset:0;z-index:201;display:none;align-items:center;
+  justify-content:center;background:rgba(3,2,10,0.97);}
+#deathScreen.show{display:flex;animation:dfade 0.5s ease;}
+@keyframes dfade{from{opacity:0;transform:scale(1.02);}to{opacity:1;transform:scale(1);}}
+.death-inner{text-align:center;max-width:480px;padding:0 20px;}
+.death-title{font-size:clamp(2.8rem,7vw,4.2rem);font-weight:900;letter-spacing:6px;
+  color:var(--c4);text-shadow:0 0 50px rgba(255,34,85,0.7);margin-bottom:6px;
+  animation:dpulse 2s ease infinite;}
+@keyframes dpulse{0%,100%{text-shadow:0 0 50px rgba(255,34,85,0.7);}
+  50%{text-shadow:0 0 80px rgba(255,34,85,1),0 0 120px rgba(255,34,85,0.4);}}
+.death-sub{font-family:'Space Mono',monospace;font-size:0.65rem;color:#2a2a3a;
+  letter-spacing:3px;margin-bottom:28px;}
+.death-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:28px;}
+.death-stat{background:rgba(255,34,85,0.05);border:1px solid rgba(255,34,85,0.18);
+  border-radius:6px;padding:12px;}
+.death-stat-label{font-family:'Space Mono',monospace;font-size:0.55rem;color:#333;
+  letter-spacing:3px;margin-bottom:5px;}
+.death-stat-val{font-size:1.7rem;color:#fff;font-weight:700;}
+.btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn-retry{padding:11px 32px;background:linear-gradient(135deg,var(--c4),var(--c3));
+  border:none;border-radius:4px;color:#fff;font-family:'Orbitron',sans-serif;
+  font-size:0.9rem;font-weight:700;letter-spacing:3px;cursor:none;transition:all 0.25s;
+  box-shadow:0 0 25px rgba(255,34,85,0.3);}
+.btn-retry:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(255,34,85,0.6);}
+.btn-menu{padding:11px 20px;background:transparent;border:1px solid rgba(255,255,255,0.12);
+  border-radius:4px;color:#555;font-family:'Orbitron',sans-serif;font-size:0.85rem;
+  letter-spacing:3px;cursor:none;transition:all 0.25s;}
+.btn-menu:hover{color:#fff;border-color:rgba(255,255,255,0.35);}
 
-.menu-eyebrow{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.7rem;letter-spacing:6px;
-  color:var(--orange);margin-bottom:14px;
-  text-transform:uppercase;opacity:0.85;
-}
-
-.menu-title{
-  font-size:clamp(4rem,10vw,7.5rem);
-  letter-spacing:4px;
-  line-height:0.9;
-  color:#fff;
-  text-transform:uppercase;
-  text-shadow:
-    0 0 60px rgba(255,107,0,0.5),
-    0 0 20px rgba(255,107,0,0.3),
-    4px 4px 0 rgba(255,107,0,0.3);
-  margin-bottom:8px;
-}
-
-.menu-title span{color:var(--orange);}
-
-.menu-sub{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.85rem;color:#666;
-  letter-spacing:3px;margin-bottom:48px;
-}
-
-.menu-controls-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;
-  margin-bottom:40px;
-}
-
-.ctrl-card{
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,107,0,0.2);
-  border-radius:8px;padding:16px;text-align:left;
-}
-
-.ctrl-card-label{
-  font-size:0.75rem;letter-spacing:3px;
-  color:var(--orange);margin-bottom:8px;
-}
-
-.ctrl-card-keys{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.8rem;color:#aaa;line-height:1.8;
-}
-
-.ctrl-card-keys b{
-  background:rgba(255,107,0,0.15);
-  border:1px solid rgba(255,107,0,0.4);
-  border-radius:4px;padding:1px 6px;
-  color:#fff;font-size:0.75rem;
-}
-
-.play-btn{
-  padding:18px 72px;
-  background:linear-gradient(135deg,var(--orange) 0%,#FF2200 100%);
-  border:none;border-radius:4px;
-  color:#fff;font-family:'Bebas Neue',sans-serif;
-  font-size:1.8rem;letter-spacing:6px;
-  cursor:none;transition:all 0.25s;
-  box-shadow:0 0 40px rgba(255,107,0,0.4),0 8px 25px rgba(0,0,0,0.4);
-  text-transform:uppercase;
-  position:relative;overflow:hidden;
-}
-
-.play-btn::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);
-  transform:translateX(-100%);transition:transform 0.4s;
-}
-
-.play-btn:hover{
-  transform:translateY(-3px);
-  box-shadow:0 0 60px rgba(255,107,0,0.7),0 12px 35px rgba(0,0,0,0.5);
-}
-
-.play-btn:hover::before{transform:translateX(100%);}
-
-.menu-tagline{
-  margin-top:20px;
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.7rem;color:#444;letter-spacing:2px;
-}
-
-/* ─── HUD ──────────────────────────────────────── */
-#hud{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  padding:12px 16px;
-  display:none;align-items:flex-start;gap:10px;
-  background:rgba(4,2,8,0.82);
-  backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(255,107,0,0.18);
-  box-shadow:0 4px 30px rgba(0,0,0,0.6);
-}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:100;padding:9px 14px;
+  display:none;align-items:center;gap:7px;
+  background:rgba(3,2,15,0.88);backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(123,79,255,0.18);box-shadow:0 2px 24px rgba(0,0,0,0.7);}
 #hud.show{display:flex;}
+.hud-stat{background:rgba(123,79,255,0.06);border:1px solid rgba(123,79,255,0.15);
+  border-radius:5px;padding:6px 12px;min-width:72px;}
+.hud-label{font-family:'Space Mono',monospace;font-size:0.5rem;letter-spacing:3px;
+  color:rgba(0,212,255,0.55);margin-bottom:1px;text-transform:uppercase;}
+.hud-value{font-size:1.4rem;color:#fff;font-weight:700;line-height:1;letter-spacing:1px;}
+.stamina-wrap{background:rgba(123,79,255,0.06);border:1px solid rgba(123,79,255,0.15);
+  border-radius:5px;padding:6px 12px;flex:1;max-width:190px;}
+.stamina-track{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-top:5px;}
+.stamina-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--c1),var(--c2));
+  border-radius:2px;transition:width 0.1s;box-shadow:0 0 5px rgba(0,212,255,0.5);}
+.stamina-bar.low{animation:sblink 0.4s ease infinite;}
+@keyframes sblink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.stage-badge{margin-left:auto;background:rgba(123,79,255,0.06);
+  border:1px solid rgba(123,79,255,0.15);border-radius:5px;padding:6px 12px;text-align:right;}
+.stage-name{font-size:0.78rem;letter-spacing:4px;color:var(--c1);font-weight:700;}
+.stage-progress{font-family:'Space Mono',monospace;font-size:0.5rem;color:#333;
+  letter-spacing:2px;margin-top:2px;}
 
-.hud-stat{
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,107,0,0.15);
-  border-radius:6px;padding:8px 14px;
-  min-width:80px;
-}
+/* LAUNCH GAUGE */
+#launchGauge{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  z-index:100;display:none;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
+#launchGauge.show{display:flex;}
+.launch-label{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:3px;
+  color:var(--gold);text-shadow:0 0 8px var(--gold);}
+.launch-track{width:150px;height:9px;background:rgba(255,255,255,0.07);border-radius:4px;
+  overflow:hidden;border:1px solid rgba(255,208,0,0.25);}
+.launch-fill{height:100%;width:0%;
+  background:linear-gradient(90deg,#44FF99,#FFD000,#FF4444);
+  border-radius:4px;transition:width 0.04s;box-shadow:0 0 8px rgba(255,208,0,0.5);}
 
-.hud-label{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.6rem;letter-spacing:3px;
-  color:rgba(255,107,0,0.7);margin-bottom:2px;
-  text-transform:uppercase;
-}
-
-.hud-value{
-  font-size:1.8rem;color:#fff;
-  text-shadow:0 0 12px rgba(255,255,255,0.3);
-  line-height:1;
-}
-
-/* Stamina */
-.stamina-wrap{
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,107,0,0.15);
-  border-radius:6px;padding:8px 14px;
-  flex:1;max-width:220px;
-}
-
-.stamina-track{
-  height:6px;background:rgba(255,255,255,0.08);
-  border-radius:3px;overflow:hidden;margin-top:6px;
-}
-
-.stamina-bar{
-  height:100%;width:100%;
-  background:linear-gradient(90deg,var(--orange),#FFD000);
-  border-radius:3px;transition:width 0.1s linear;
-  box-shadow:0 0 8px rgba(255,107,0,0.8);
-}
-
-.stamina-bar.low{animation:stamBlink 0.4s ease infinite;}
-@keyframes stamBlink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-
-/* Stage indicator */
-.stage-badge{
-  margin-left:auto;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,107,0,0.15);
-  border-radius:6px;padding:8px 14px;
-  text-align:right;
-}
-
-.stage-name{
-  font-size:1rem;letter-spacing:3px;color:var(--orange);
-}
-
-.stage-progress{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.65rem;color:#666;
-  letter-spacing:2px;margin-top:2px;
-}
-
-/* Checkpoint flash */
-#cpFlash{
-  position:fixed;inset:0;pointer-events:none;z-index:55;
-  background:rgba(0,255,229,0.15);
-  opacity:0;border:3px solid rgba(0,255,229,0.5);
-  transition:opacity 0.1s;
-}
-
-#cpMsg{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:56;pointer-events:none;
-  font-size:2.5rem;letter-spacing:6px;color:var(--cyan);
-  text-shadow:0 0 30px var(--cyan);
-  opacity:0;transition:opacity 0.2s;
-}
-
-/* Grab indicators */
-#grabHints{
-  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-  z-index:100;display:flex;gap:20px;pointer-events:none;
-}
-
-.grab-chip{
-  background:rgba(5,3,10,0.9);
-  border:1px solid rgba(255,107,0,0.4);
-  border-radius:20px;padding:8px 18px;
-  font-size:0.95rem;letter-spacing:3px;
-  color:var(--gold);
-  text-shadow:0 0 10px var(--gold);
-  opacity:0;transform:translateY(8px);
-  transition:opacity 0.2s,transform 0.2s;
-}
-
+/* GRAB HINTS */
+#grabHints{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  z-index:100;display:flex;gap:14px;pointer-events:none;}
+.grab-chip{background:rgba(3,2,15,0.92);border:1px solid rgba(0,212,255,0.3);
+  border-radius:16px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:0.65rem;
+  letter-spacing:3px;color:var(--gold);text-shadow:0 0 6px var(--gold);
+  opacity:0;transform:translateY(6px);transition:opacity 0.2s,transform 0.2s;}
 .grab-chip.show{opacity:1;transform:translateY(0);}
 
-/* Control strip */
-#strip{
-  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
-  z-index:100;
-  background:rgba(4,2,8,0.88);
-  backdrop-filter:blur(16px);
-  border:1px solid rgba(255,107,0,0.25);
-  border-radius:40px;padding:10px 24px;
-  display:none;align-items:center;gap:16px;
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.7rem;color:#888;letter-spacing:1px;
-  box-shadow:0 -2px 20px rgba(0,0,0,0.5);
-}
+/* STRIP */
+#strip{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;
+  background:rgba(3,2,15,0.92);backdrop-filter:blur(16px);
+  border:1px solid rgba(123,79,255,0.22);border-radius:40px;padding:7px 20px;
+  display:none;align-items:center;gap:12px;font-family:'Space Mono',monospace;
+  font-size:0.58rem;color:#444;letter-spacing:1px;box-shadow:0 -2px 20px rgba(0,0,0,0.6);}
 #strip.show{display:flex;}
+.sk{background:rgba(123,79,255,0.1);border:1px solid rgba(123,79,255,0.28);
+  border-radius:3px;padding:1px 5px;color:#999;font-size:0.58rem;}
 
-.sk{
-  background:rgba(255,107,0,0.12);
-  border:1px solid rgba(255,107,0,0.35);
-  border-radius:4px;padding:2px 8px;
-  color:#ccc;font-size:0.7rem;
-}
-
-/* ─── PAUSE ─────────────────────────────────── */
-#pauseScreen{
-  position:fixed;inset:0;z-index:190;
-  background:rgba(5,3,10,0.92);
-  backdrop-filter:blur(16px);
-  display:none;align-items:center;justify-content:center;
-}
-#pauseScreen.show{display:flex;}
-
-.pause-content{text-align:center;}
-.pause-title{
-  font-size:5rem;letter-spacing:8px;color:#fff;
-  text-shadow:0 0 40px rgba(255,107,0,0.4);
-  margin-bottom:12px;
-}
-.pause-sub{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.8rem;color:#555;letter-spacing:4px;
-  margin-bottom:40px;
-}
-
-/* ─── DEATH ─────────────────────────────────── */
-#deathScreen{
-  position:fixed;inset:0;z-index:201;
-  display:none;align-items:center;justify-content:center;
-  background:rgba(5,3,10,0.97);
-}
-#deathScreen.show{display:flex;animation:deathFade 0.6s ease;}
-
-@keyframes deathFade{from{opacity:0;transform:scale(1.03);}to{opacity:1;transform:scale(1);}}
-
-.death-inner{text-align:center;max-width:500px;}
-
-.death-title{
-  font-size:clamp(3rem,8vw,5rem);
-  letter-spacing:6px;
-  color:var(--red);
-  text-shadow:0 0 40px rgba(255,34,0,0.7),0 0 80px rgba(255,34,0,0.3);
-  margin-bottom:8px;
-  animation:deathPulse 2s ease infinite;
-}
-
-@keyframes deathPulse{
-  0%,100%{text-shadow:0 0 40px rgba(255,34,0,0.7),0 0 80px rgba(255,34,0,0.3);}
-  50%{text-shadow:0 0 60px rgba(255,34,0,1),0 0 120px rgba(255,34,0,0.5);}
-}
-
-.death-sub{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.8rem;color:#444;letter-spacing:3px;margin-bottom:40px;
-}
-
-.death-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:12px;margin-bottom:40px;
-}
-
-.death-stat{
-  background:rgba(255,34,0,0.06);
-  border:1px solid rgba(255,34,0,0.2);
-  border-radius:6px;padding:16px;
-}
-
-.death-stat-label{
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.6rem;color:#555;letter-spacing:3px;
-  margin-bottom:6px;
-}
-
-.death-stat-val{
-  font-size:2rem;color:#fff;
-  text-shadow:0 0 10px rgba(255,255,255,0.2);
-}
-
-.btn-row{display:flex;gap:12px;justify-content:center;}
-
-.btn-retry{
-  padding:14px 48px;
-  background:linear-gradient(135deg,var(--red),var(--orange));
-  border:none;border-radius:4px;
-  color:#fff;font-family:'Bebas Neue',sans-serif;
-  font-size:1.5rem;letter-spacing:4px;
-  cursor:none;transition:all 0.25s;
-  box-shadow:0 0 30px rgba(255,107,0,0.3);
-}
-
-.btn-retry:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 50px rgba(255,107,0,0.6);
-}
-
-.btn-menu{
-  padding:14px 32px;
-  background:transparent;
-  border:1px solid rgba(255,107,0,0.4);
-  border-radius:4px;
-  color:#888;font-family:'Bebas Neue',sans-serif;
-  font-size:1.5rem;letter-spacing:4px;
-  cursor:none;transition:all 0.25s;
-}
-
-.btn-menu:hover{color:#fff;border-color:var(--orange);}
-
-/* pointer lock */
-#lockMsg{
-  position:fixed;inset:0;z-index:189;
-  background:rgba(5,3,10,0.9);backdrop-filter:blur(12px);
-  display:none;align-items:center;justify-content:center;
-  flex-direction:column;gap:12px;
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.9rem;color:#aaa;letter-spacing:3px;text-align:center;
-}
+/* LOCK MSG */
+#lockMsg{position:fixed;inset:0;z-index:189;background:rgba(3,2,10,0.92);
+  backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:10px;font-family:'Space Mono',monospace;
+  font-size:0.75rem;color:#777;letter-spacing:3px;text-align:center;}
 #lockMsg.show{display:flex;}
+
+/* CAM MODE LABEL */
+#camModeLabel{position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);z-index:110;
+  pointer-events:none;font-size:1.3rem;letter-spacing:6px;font-weight:700;
+  color:#fff;text-shadow:0 0 20px rgba(0,212,255,0.8);opacity:0;transition:opacity 0.4s;}
 </style>
 </head>
 <body>
@@ -442,151 +228,137 @@ canvas{display:block;}
 <div id="cpFlash"></div>
 <div id="cpMsg">CHECKPOINT</div>
 
-<!-- ── MENU ── -->
+<!-- MENU -->
 <div id="menu">
   <div class="menu-bg"></div>
   <div class="menu-grid"></div>
   <div class="menu-inner">
-    <div class="menu-eyebrow">BAZOOKA STUDIO · PC EDITION</div>
-    <div class="menu-title">CROWBAR<br><span>CLIMBERS</span></div>
-    <div class="menu-sub">PHYSICS-BASED VERTICAL CLIMBING</div>
-
+    <div class="menu-eyebrow">STICKGAMES · GALAXY EDITION</div>
+    <div class="menu-title">STICK<br><span class="accent">CLIMB</span></div>
+    <div class="menu-sub">Physics-Based Vertical Climbing</div>
     <div class="menu-controls-grid">
       <div class="ctrl-card">
-        <div class="ctrl-card-label">🔵 LEFT CROWBAR</div>
-        <div class="ctrl-card-keys">
-          Move: <b>W</b><b>A</b><b>S</b><b>D</b><br>
-          Hook / Grab: <b>SHIFT</b>
-        </div>
+        <div class="ctrl-card-label">🔵 Left Arm</div>
+        <div class="ctrl-card-keys">Move: <b>W</b><b>A</b><b>S</b><b>D</b><br>Hook: <b>SHIFT</b></div>
       </div>
       <div class="ctrl-card">
-        <div class="ctrl-card-label">🔴 RIGHT CROWBAR</div>
-        <div class="ctrl-card-keys">
-          Move: <b>↑</b><b>←</b><b>↓</b><b>→</b><br>
-          Hook / Grab: <b>ENTER</b>
-        </div>
+        <div class="ctrl-card-label">🔴 Right Arm</div>
+        <div class="ctrl-card-keys">Move: <b>↑</b><b>←</b><b>↓</b><b>→</b><br>Hook: <b>ENTER</b></div>
       </div>
       <div class="ctrl-card">
-        <div class="ctrl-card-label">📷 CAMERA</div>
-        <div class="ctrl-card-keys">
-          Look: <b>MOUSE</b><br>
-          Toggle 1st/3rd: <b>V</b>
-        </div>
+        <div class="ctrl-card-label">🚀 Launch</div>
+        <div class="ctrl-card-keys">Both hooked, hold<br><b>S</b> + <b>↓</b> then release</div>
       </div>
       <div class="ctrl-card">
-        <div class="ctrl-card-label">⚡ TIPS</div>
-        <div class="ctrl-card-keys">
-          Swing both arms together for big launches. Don't let stamina hit zero!
-        </div>
+        <div class="ctrl-card-label">📷 Camera</div>
+        <div class="ctrl-card-keys">Look: <b>MOUSE</b><br>Toggle: <b>V</b></div>
       </div>
     </div>
-
-    <button class="play-btn" onclick="startGame()">START CLIMB</button>
-    <div class="menu-tagline">4 STAGES · CHECKPOINTS · MOVING OBSTACLES · MOMENTUM PHYSICS</div>
+    <div class="menu-btn-row">
+      <button class="play-btn" onclick="startGame()">LAUNCH</button>
+      <button class="levels-btn" onclick="showLevels()">STAGES</button>
+    </div>
+    <div class="menu-tagline">4 STAGES · CHECKPOINTS · GALAXY ASCENT · MOMENTUM PHYSICS</div>
   </div>
 </div>
 
-<!-- ── PAUSE ── -->
+<!-- LEVELS SCREEN -->
+<div id="levelsScreen">
+  <div class="levels-bg"></div>
+  <div class="levels-inner">
+    <div class="levels-title">STAGES</div>
+    <div class="levels-sub">REACH A STAGE TO UNLOCK IT</div>
+    <div class="levels-grid" id="levelsGrid"></div>
+    <button class="back-btn" onclick="hideLevels()">← BACK TO MENU</button>
+  </div>
+</div>
+
+<!-- PAUSE -->
 <div id="pauseScreen">
   <div class="pause-content">
     <div class="pause-title">PAUSED</div>
-    <div class="pause-sub">PRESS ESC OR CLICK TO RESUME</div>
+    <div class="pause-sub">PRESS ESC TO RESUME</div>
     <button class="play-btn" onclick="resumeGame()">RESUME</button>
   </div>
 </div>
 
-<!-- ── DEATH ── -->
+<!-- DEATH -->
 <div id="deathScreen">
   <div class="death-inner">
     <div class="death-title">YOU FELL</div>
-    <div class="death-sub">THE WALL WINS... FOR NOW</div>
+    <div class="death-sub">THE VOID CLAIMS ANOTHER</div>
     <div class="death-grid">
       <div class="death-stat">
-        <div class="death-stat-label">MAX HEIGHT</div>
+        <div class="death-stat-label">Max Height</div>
         <div class="death-stat-val" id="dHeight">0m</div>
       </div>
       <div class="death-stat">
-        <div class="death-stat-label">TIME</div>
+        <div class="death-stat-label">Time</div>
         <div class="death-stat-val" id="dTime">0:00</div>
       </div>
       <div class="death-stat">
-        <div class="death-stat-label">GRABS</div>
+        <div class="death-stat-label">Grabs</div>
         <div class="death-stat-val" id="dGrabs">0</div>
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn-retry" onclick="restartGame()">FULL RESTART</button>
-      <button class="btn-retry" style="background:linear-gradient(135deg,#226644,#44AA66)" onclick="respawnAtCheckpoint()">↩ CHECKPOINT</button>
+      <button class="btn-retry" onclick="restartGame()">RESTART</button>
+      <button class="btn-retry" style="background:linear-gradient(135deg,#1a5c3a,#2a8855)" onclick="respawnAtCheckpoint()">↩ CHECKPOINT</button>
       <button class="btn-menu" onclick="showMenu()">MENU</button>
     </div>
   </div>
 </div>
 
-<!-- ── LOCK MSG ── -->
+<!-- LOCK MSG -->
 <div id="lockMsg">
-  <div>CLICK ANYWHERE TO LOCK CURSOR</div>
-  <div style="color:#444;font-size:0.7rem;letter-spacing:2px;">ESC TO PAUSE</div>
+  <div>CLICK TO LOCK CURSOR</div>
+  <div style="color:#333;font-size:0.6rem;letter-spacing:2px;margin-top:4px;">ESC TO PAUSE</div>
 </div>
 
-<!-- ── HUD ── -->
+<!-- HUD -->
 <div id="hud">
-  <div class="hud-stat">
-    <div class="hud-label">HEIGHT</div>
-    <div class="hud-value" id="hHeight">0m</div>
-  </div>
-  <div class="hud-stat">
-    <div class="hud-label">TIME</div>
-    <div class="hud-value" id="hTime">0:00</div>
-  </div>
-  <div class="hud-stat">
-    <div class="hud-label">GRABS</div>
-    <div class="hud-value" id="hGrabs">0</div>
-  </div>
+  <div class="hud-stat"><div class="hud-label">Height</div><div class="hud-value" id="hHeight">0m</div></div>
+  <div class="hud-stat"><div class="hud-label">Time</div><div class="hud-value" id="hTime">0:00</div></div>
+  <div class="hud-stat"><div class="hud-label">Grabs</div><div class="hud-value" id="hGrabs">0</div></div>
   <div class="stamina-wrap">
-    <div class="hud-label">STAMINA</div>
-    <div class="stamina-track">
-      <div class="stamina-bar" id="stBar" style="width:100%"></div>
-    </div>
+    <div class="hud-label">Stamina</div>
+    <div class="stamina-track"><div class="stamina-bar" id="stBar" style="width:100%"></div></div>
   </div>
   <div class="stage-badge">
-    <div class="stage-name" id="stageName">FORGE DISTRICT</div>
+    <div class="stage-name" id="stageName">NEBULA BASE</div>
     <div class="stage-progress" id="stageProgress">STAGE 1 / 4</div>
   </div>
 </div>
 
+<!-- LAUNCH GAUGE -->
+<div id="launchGauge">
+  <div class="launch-label">CHARGING LAUNCH</div>
+  <div class="launch-track"><div class="launch-fill" id="launchFill"></div></div>
+</div>
+
 <div id="grabHints">
-  <div class="grab-chip" id="chipL">🔵 SHIFT TO GRAB</div>
-  <div class="grab-chip" id="chipR">🔴 ENTER TO GRAB</div>
+  <div class="grab-chip" id="chipL">SHIFT TO HOOK</div>
+  <div class="grab-chip" id="chipR">ENTER TO HOOK</div>
 </div>
 
 <div id="strip">
-  <span>🔵 <span class="sk">WASD</span> <span class="sk">SHIFT</span></span>
-  <span style="color:#333">|</span>
-  <span>🔴 <span class="sk">ARROWS</span> <span class="sk">ENTER</span></span>
-  <span style="color:#333">|</span>
-  <span>📷 <span class="sk">MOUSE</span></span>
-  <span style="color:#333">|</span>
-  <span>👁 <span class="sk">V</span> CAM</span>
-  <span style="color:#333">|</span>
-  <span><span class="sk">ESC</span> PAUSE</span>
+  <span>🔵 <span class="sk">WASD</span><span class="sk">SHIFT</span></span>
+  <span style="color:#222">|</span>
+  <span>🔴 <span class="sk">ARROWS</span><span class="sk">ENTER</span></span>
+  <span style="color:#222">|</span>
+  <span>🚀 <span class="sk">S+↓</span></span>
+  <span style="color:#222">|</span>
+  <span><span class="sk">V</span>CAM <span class="sk">ESC</span>PAUSE</span>
 </div>
 
-<!-- Camera mode flash label -->
-<div id="camModeLabel" style="
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:110;pointer-events:none;
-  font-size:1.8rem;letter-spacing:6px;
-  color:#fff;text-shadow:0 0 20px rgba(255,107,0,0.8);
-  opacity:0;transition:opacity 0.4s;
-  font-family:'Bebas Neue',sans-serif;
-">🎥 THIRD PERSON</div>
+<div id="camModeLabel">🎥 THIRD PERSON</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════
-// CROWBAR CLIMBERS – PC EDITION
-// AAA physics-based vertical climbing
+// STICK CLIMB – GALAXY EDITION
+// Physics-based vertical climbing · Deep space
 // ═══════════════════════════════════════════════════════
 
 const $ = id => document.getElementById(id);
@@ -668,13 +440,67 @@ let G = null;
 
 // Stage definitions
 const STAGES = [
-  { name:'FORGE DISTRICT',  yMin:0,   yMax:260,  color:0x1a0800, fog:0x0a0400, fogD:0.009, ambCol:0xFF6B00, ambInt:0.4, sunCol:0xFF6B00, sunInt:1.5, bgCol:0x08040A },
-  { name:'MAGMA VAULT',     yMin:260, yMax:520,  color:0x1a0300, fog:0x120200, fogD:0.009, ambCol:0xFF2200, ambInt:0.5, sunCol:0xFF4400, sunInt:2.0, bgCol:0x0D0200 },
-  { name:'NEON SPIRE',      yMin:520, yMax:780,  color:0x030A20, fog:0x020618, fogD:0.009, ambCol:0x9B4DFF, ambInt:0.5, sunCol:0x00FFE5, sunInt:1.8, bgCol:0x010208 },
-  { name:'VOID ASCENT',     yMin:780, yMax:9999, color:0x000005, fog:0x000008, fogD:0.005, ambCol:0x4466FF, ambInt:0.3, sunCol:0x8888FF, sunInt:1.2, bgCol:0x000005 }
+  { name:'NEBULA BASE',     yMin:0,   yMax:260,  color:0x060215, fog:0x04010E, fogD:0.008, ambCol:0x7B4FFF, ambInt:0.5, sunCol:0x9966FF, sunInt:1.4, bgCol:0x04010C, nebCol:0x7B4FFF },
+  { name:'STELLAR DRIFT',   yMin:260, yMax:520,  color:0x020A18, fog:0x010810, fogD:0.008, ambCol:0x00D4FF, ambInt:0.5, sunCol:0x0088FF, sunInt:1.6, bgCol:0x010610, nebCol:0x0055AA },
+  { name:'PULSAR RIDGE',    yMin:520, yMax:780,  color:0x150520, fog:0x0D0318, fogD:0.007, ambCol:0xFF2288, ambInt:0.5, sunCol:0xFF44AA, sunInt:1.8, bgCol:0x0A0110, nebCol:0xFF2288 },
+  { name:'DEEP VOID',       yMin:780, yMax:9999, color:0x000208, fog:0x000106, fogD:0.004, ambCol:0x4488FF, ambInt:0.3, sunCol:0x6699FF, sunInt:1.0, bgCol:0x000104, nebCol:0x224488 }
 ];
 
 const HOLD_TYPES = ['sphere','pipe','slab','crystal'];
+
+// ─── PROGRESS TRACKING ───────────────────────────────────
+let unlockedStages = new Set([0]); // stage 0 always unlocked
+
+function unlockStage(idx){
+  if(!unlockedStages.has(idx)){
+    unlockedStages.add(idx);
+    try{ localStorage.setItem('sc_unlocked', JSON.stringify([...unlockedStages])); }catch(e){}
+  }
+}
+
+// Load saved progress
+try{
+  const saved = JSON.parse(localStorage.getItem('sc_unlocked')||'[0]');
+  saved.forEach(i=>unlockedStages.add(i));
+}catch(e){}
+
+function showLevels(){
+  $('menu').classList.add('hide');
+  $('levelsScreen').classList.add('show');
+  renderLevelsGrid();
+}
+
+function hideLevels(){
+  $('levelsScreen').classList.remove('show');
+  $('menu').classList.remove('hide');
+}
+
+function renderLevelsGrid(){
+  const grid = $('levelsGrid');
+  const ranges = ['0 – 260m','260 – 520m','520 – 780m','780m+'];
+  let html = '';
+  for(let i=0;i<STAGES.length;i++){
+    const s = STAGES[i];
+    const unlocked = unlockedStages.has(i);
+    const cls = unlocked ? 'unlocked' : 'locked';
+    const action = unlocked ? '<div class="stage-card-action">&#9654; PLAY</div>' : '';
+    const lock = unlocked ? '' : '<div class="stage-card-lock">&#128274;</div>';
+    const click = unlocked ? 'onclick="startFromStage('+i+')"' : '';
+    html += '<div class="stage-card '+cls+'" data-stage="'+i+'" '+click+'>'
+      + '<div class="stage-card-num">STAGE '+(i+1)+' / 4</div>'
+      + '<div class="stage-card-name">'+s.name+'</div>'
+      + '<div class="stage-card-range">'+ranges[i]+'</div>'
+      + action + lock
+      + '<div class="stage-card-bar"></div>'
+      + '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function startFromStage(stageIdx){
+  $('levelsScreen').classList.remove('show');
+  startGame(stageIdx);
+}
 const ARM_LENGTH = 9.0;   // max arm extension
 const GRAB_RADIUS = 11.0; // how close a hold must be to grab
 const BODY_MASS  = 1.0;
@@ -717,20 +543,84 @@ function updateStageLights(stageIdx){
   sunLight.color.set(s.sunCol); sunLight.intensity = s.sunInt;
 }
 
-// ─── BACKGROUND / STARFIELD ────────────────────────────
+// ─── GALAXY STARFIELD ──────────────────────────────────
 function buildStarfield(){
-  const geo = new THREE.BufferGeometry();
-  const verts = [];
-  for(let i=0;i<12000;i++){
-    verts.push(
-      (Math.random()-0.5)*2000,
-      Math.random()*1200-50,
-      (Math.random()-0.5)*2000
-    );
+  // Layer 1: tiny distant white stars
+  {
+    const geo = new THREE.BufferGeometry();
+    const v = [];
+    for(let i=0;i<18000;i++){
+      v.push((Math.random()-0.5)*3000, Math.random()*1400-100, (Math.random()-0.5)*3000);
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(v,3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({color:0xCCDDFF,size:0.9,transparent:true,opacity:0.7,sizeAttenuation:true})));
   }
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
-  const mat = new THREE.PointsMaterial({color:0xffffff, size:1.8, transparent:true, opacity:0.85, sizeAttenuation:true});
-  scene.add(new THREE.Points(geo, mat));
+  // Layer 2: medium blue-tinted stars
+  {
+    const geo = new THREE.BufferGeometry();
+    const v = [];
+    for(let i=0;i<5000;i++){
+      v.push((Math.random()-0.5)*2000, Math.random()*1200-50, (Math.random()-0.5)*2000);
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(v,3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({color:0x88AAFF,size:2.2,transparent:true,opacity:0.6,sizeAttenuation:true})));
+  }
+  // Layer 3: large colored hero stars (purple / cyan / pink)
+  {
+    const geo = new THREE.BufferGeometry();
+    const v = [], c = [];
+    const heroColors = [[0.5,0.3,1],[0,0.8,1],[1,0.15,0.5],[0.7,0.5,1],[0,1,0.9]];
+    for(let i=0;i<800;i++){
+      v.push((Math.random()-0.5)*1800, Math.random()*1100, (Math.random()-0.5)*1800);
+      const col = heroColors[Math.floor(Math.random()*heroColors.length)];
+      c.push(...col);
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(v,3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(c,3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({vertexColors:true,size:3.5,transparent:true,opacity:0.9,sizeAttenuation:true})));
+  }
+  // Nebula cloud planes (canvas texture billboards)
+  buildNebulaClouds();
+}
+
+function makeNebulaCanvas(r,g,b){
+  const c = document.createElement('canvas');
+  c.width=256; c.height=256;
+  const ctx = c.getContext('2d');
+  const grd = ctx.createRadialGradient(128,128,0,128,128,128);
+  grd.addColorStop(0, 'rgba('+r+','+g+','+b+',0.55)');
+  grd.addColorStop(0.35, 'rgba('+r+','+g+','+b+',0.2)');
+  grd.addColorStop(0.7, 'rgba('+r+','+g+','+b+',0.06)');
+  grd.addColorStop(1, 'rgba('+r+','+g+','+b+',0)');
+  ctx.fillStyle = grd; ctx.fillRect(0,0,256,256);
+  for(let i=0;i<8;i++){
+    const bx=60+Math.random()*136, by=60+Math.random()*136, br=20+Math.random()*40;
+    const bg = ctx.createRadialGradient(bx,by,0,bx,by,br);
+    bg.addColorStop(0, 'rgba('+r+','+g+','+b+',0.15)');
+    bg.addColorStop(1, 'transparent');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.fill();
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+function buildNebulaClouds(){
+  const nebDefs = [
+    {r:123,g:79,b:255,  y:80,  x:-40, s:180},
+    {r:0,  g:180,b:255, y:320, x:50,  s:200},
+    {r:255,g:30, b:120, y:570, x:-60, s:160},
+    {r:70, g:120,b:255, y:820, x:30,  s:220},
+    {r:180,g:60, b:255, y:200, x:70,  s:140},
+    {r:0,  g:220,b:200, y:440, x:-80, s:170},
+  ];
+  for(const d of nebDefs){
+    const tex = makeNebulaCanvas(d.r,d.g,d.b);
+    const mat = new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.55,
+      side:THREE.DoubleSide,depthWrite:false});
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(d.s,d.s), mat);
+    mesh.position.set(d.x, d.y, -60-Math.random()*40);
+    mesh.rotation.z = Math.random()*Math.PI;
+    scene.add(mesh);
+  }
 }
 
 // ─── MAIN WALL GEOMETRY ────────────────────────────────
@@ -1158,8 +1048,9 @@ function updateArmLine(line, fromPos, toPos){
 }
 
 // ─── GAME START ─────────────────────────────────────────
-function startGame(){
+function startGame(stageIdx=0){
   $('menu').classList.add('hide');
+  $('levelsScreen').classList.remove('show');
   $('hud').classList.add('show');
   $('strip').classList.add('show');
 
@@ -1174,7 +1065,7 @@ function startGame(){
   }
 
   setupLights();
-  buildStarfield();
+  buildStarfield(); // galaxy multi-layer
   buildWall();
 
   G = {
@@ -1191,7 +1082,7 @@ function startGame(){
     keys: {},
 
     body: {
-      pos: V3(0, 8, 2),
+      pos: V3(0, STAGES[stageIdx].yMin + 8, 2),
       vel: V3(),
       onGround: false
     },
@@ -1203,7 +1094,8 @@ function startGame(){
     gears: [],
     checkpoints: [],
     checkpointIdx: 0,
-    respawnPos: V3(0, 8, 2),
+    respawnPos: V3(0, STAGES[stageIdx].yMin + 8, 2),
+    startStageIdx: stageIdx,
 
     stamina: 100,
     grabs: 0,
@@ -1211,6 +1103,8 @@ function startGame(){
     startTime: Date.now(),
 
     screenShake: 0,
+    launchCharge: 0,
+    launchCharging: false,
     stageIdx: 0,
     dead: false,
     paused: false
@@ -1225,10 +1119,13 @@ function startGame(){
   // Ambient rain/lava particles
   G.envParticles = [];
 
-  G.left.pos.set(-2.5, 10, 2);
-  G.right.pos.set(2.5, 10, 2);
+  const startY = STAGES[stageIdx].yMin + 10;
+  G.left.pos.set(-2.5, startY, 2);
+  G.right.pos.set(2.5, startY, 2);
   G.left.group.position.copy(G.left.pos);
   G.right.group.position.copy(G.right.pos);
+  G.camTargetY = startY;
+  updateStageLights(stageIdx);
 
   // ─ Generate holds procedurally ─
   generateHolds();
@@ -1476,10 +1373,18 @@ function updatePhysics(dt){
     G.stamina = Math.min(100, G.stamina + 0.18);
   }
 
-  // ─ Death: fell off bottom ─
-  const fallThreshold = G.respawnPos.y - 120;
-  if(G.body.pos.y < fallThreshold && !G.body.onGround){
-    die();
+  // ─ Platform respawn: if fell far below respawn point, teleport back ─
+  if(G.body.pos.y < G.respawnPos.y - 35){
+    // Soft respawn - flash and teleport back to last checkpoint/platform
+    G.body.pos.copy(G.respawnPos);
+    G.body.vel.set(0,0,0);
+    G.left.vel.set(0,0,0); G.right.vel.set(0,0,0);
+    releaseGrab(G.left); releaseGrab(G.right);
+    G.stamina = Math.max(G.stamina, 30);
+    G.screenShake = 1.0;
+    $('flash').style.opacity=0.4;
+    setTimeout(()=>$('flash').style.opacity=0, 200);
+    playSFX(120, 0.3, 'sawtooth', 0.18);
     return;
   }
 
@@ -1529,19 +1434,46 @@ function updatePhysics(dt){
   const tiltZ = -G.body.vel.x * 0.15;
   G.playerBody.rotation.z += (tiltZ - G.playerBody.rotation.z) * 0.12;
 
-  // ─ Launch mechanic: both hooked + both down keys = BOOST ─
-  if(G.left.hooked && G.right.hooked &&
-     G.keys['s'] && G.keys['ArrowDown']){
-    const avgHoldY = (G.left.hookHold.position.y + G.right.hookHold.position.y)*0.5;
-    const launchDir = V3(0,1,0);
-    G.body.vel.addScaledVector(launchDir, 0.8);
-    G.body.vel.y = Math.max(G.body.vel.y, 4.5);
-    releaseGrab(G.left);
-    releaseGrab(G.right);
-    G.screenShake = 0.4;
-    spawnParticles(G.body.pos, 0xFFD000, 15, 0.25);
-    playSFX(600, 0.15, 'sine', 0.25);
-    playSFX(300, 0.1, 'sawtooth', 0.15);
+  // ─ Launch gauge mechanic ─
+  const canCharge = G.left.hooked && G.right.hooked;
+  const chargingNow = canCharge && G.keys['s'] && G.keys['ArrowDown'];
+
+  if(chargingNow){
+    G.launchCharging = true;
+    G.launchCharge = Math.min(100, G.launchCharge + 2.2);
+    // Sound build-up
+    if(G.launchCharge > 5 && Math.random()<0.12){
+      playSFX(200 + G.launchCharge*3, 0.04, 'sawtooth', 0.06 + G.launchCharge*0.001);
+    }
+  } else if(G.launchCharging){
+    // RELEASE! Launch with power proportional to charge
+    if(G.launchCharge > 8){
+      const pwr = G.launchCharge / 100;
+      G.body.vel.y = 4 + pwr * 14;
+      G.body.vel.x *= 0.2;
+      releaseGrab(G.left); releaseGrab(G.right);
+      G.screenShake = 0.5 + pwr * 2.0;
+      const col = pwr > 0.6 ? 0xFF4444 : (pwr > 0.3 ? 0xFFD000 : 0x44FF88);
+      spawnParticles(G.body.pos, col, Math.floor(8 + pwr*20), 0.15 + pwr*0.3);
+      playSFX(300 + pwr*500, 0.18, 'sine', 0.2 + pwr*0.15);
+      playSFX(150 + pwr*200, 0.12, 'sawtooth', 0.15);
+      $('flash').style.opacity = 0.1 + pwr*0.35;
+      setTimeout(()=>$('flash').style.opacity=0, 80 + pwr*80);
+    }
+    G.launchCharge = 0;
+    G.launchCharging = false;
+  } else {
+    // Decay charge quickly when not held
+    G.launchCharge = Math.max(0, G.launchCharge - 4);
+    if(!canCharge) G.launchCharging = false;
+  }
+
+  // Show/hide gauge
+  if(G.launchCharge > 2){
+    $('launchGauge').classList.add('show');
+    $('launchFill').style.width = G.launchCharge + '%';
+  } else {
+    $('launchGauge').classList.remove('show');
   }
 
   // ─ Ambient environment particles ─
@@ -1565,6 +1497,7 @@ function updatePhysics(dt){
   const si = newStage < 0 ? STAGES.length-1 : newStage;
   if(si !== G.stageIdx){
     G.stageIdx = si;
+    unlockStage(si);
     updateStageLights(si);
     sunLight.position.y = G.body.pos.y + 100;
     backLight.position.y = G.body.pos.y + 80;
@@ -1634,10 +1567,23 @@ function updateHand(hand, ku, kd, kl, kr, isHooked, otherHooked, grav){
     hand.pos.add(hand.swingMom);
     hand.swingMom.multiplyScalar(0.93);
 
-    // Wide reach bounds — let arms go far above
+    // Wide reach bounds
     hand.pos.x = clamp(hand.pos.x, -28, 28);
     hand.pos.y = clamp(hand.pos.y, G.body.pos.y-3, G.body.pos.y+22);
     hand.pos.z = clamp(hand.pos.z, -8, 10);
+
+    // ── WALL MAGNETISM: gently pull toward nearest hold above ──
+    if(hand.nearHold){
+      const toHold = V3().subVectors(hand.nearHold.position, hand.pos);
+      const dist = toHold.length();
+      if(dist < 9){
+        const strength = (1 - dist/9) * 0.018; // gentle pull
+        hand.pos.addScaledVector(toHold.normalize(), strength);
+      }
+    } else {
+      // Drift z toward wall when no hold nearby
+      hand.pos.z += (-6 - hand.pos.z) * 0.012;
+    }
   } else {
     // Hooked: lerp to hold position
     const hp = hand.hookHold.position;
@@ -1841,27 +1787,42 @@ function gameLoop(ts=0){
   updateParticles();
   updateHUD();
 
-  // Pulsing holds
+  // Pulsing holds + slow rotation on crystals
   const t = Date.now() * 0.002;
   for(const h of G.holds){
     const pulse = 0.5 + Math.sin(t + h.position.y*0.1)*0.5;
     if(h.userData.light) h.userData.light.intensity = 0.5 + pulse*0.6;
+    if(h.userData.type==='crystal' && h.userData.mainMesh){
+      h.userData.mainMesh.rotation.y += 0.008;
+      h.userData.mainMesh.rotation.x += 0.004;
+    }
+    // Pulse emissive intensity on hold mesh
+    if(h.userData.mainMesh && h.userData.mainMesh.material){
+      h.userData.mainMesh.material.emissiveIntensity = 0.4 + pulse*0.5;
+    }
   }
 
   renderer.render(scene, camera);
 }
 
 // ─── INIT ───────────────────────────────────────────────
-buildStarfield();
+buildStarfield(); // galaxy multi-layer
 renderer.setClearColor(0x05030A);
 renderer.render(scene, camera);
 
-// Animate menu starfield
+// Animate menu galaxy
 (function menuLoop(){
   if(G) return;
   requestAnimationFrame(menuLoop);
   renderer.render(scene, camera);
-  scene.children.forEach(c=>{ if(c.type==='Points') c.rotation.y+=0.0002; });
+  const t = Date.now() * 0.0001;
+  scene.children.forEach(c=>{
+    if(c.type==='Points') c.rotation.y += 0.00015;
+    if(c.isMesh && c.material.map && c.material.transparent && c.geometry.type==='PlaneGeometry'){
+      c.rotation.z += 0.00008;
+      c.material.opacity = 0.45 + Math.sin(t + c.position.y*0.01)*0.12;
+    }
+  });
 })();
 
 </script>
