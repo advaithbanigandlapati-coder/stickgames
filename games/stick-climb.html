@@ -247,7 +247,7 @@ canvas{display:block;}
       </div>
       <div class="ctrl-card">
         <div class="ctrl-card-label">🚀 Launch</div>
-        <div class="ctrl-card-keys">Both hooked, hold<br><b>S</b> + <b>↓</b> then release</div>
+        <div class="ctrl-card-keys">Both arms hooked,<br>hold <b>SPACE</b> then release</div>
       </div>
       <div class="ctrl-card">
         <div class="ctrl-card-label">📷 Camera</div>
@@ -346,7 +346,7 @@ canvas{display:block;}
   <span style="color:#222">|</span>
   <span>🔴 <span class="sk">ARROWS</span><span class="sk">ENTER</span></span>
   <span style="color:#222">|</span>
-  <span>🚀 <span class="sk">S+↓</span></span>
+  <span>🚀 <span class="sk">SPACE</span></span>
   <span style="color:#222">|</span>
   <span>🪝 <span class="sk">G</span>RECALL</span>
   <span style="color:#222">|</span>
@@ -1487,8 +1487,9 @@ function updatePhysics(dt){
   G.playerBody.rotation.z += (tiltZ - G.playerBody.rotation.z) * 0.12;
 
   // ─ Launch gauge mechanic ─
+  // Hold SPACE (while both arms hooked) to charge, release to launch.
   const canCharge = G.left.hooked && G.right.hooked;
-  const chargingNow = canCharge && G.keys['s'] && G.keys['ArrowDown'];
+  const chargingNow = canCharge && (G.keys[' '] || G.keys['Space']);
 
   if(chargingNow){
     G.launchCharging = true;
