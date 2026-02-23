@@ -161,12 +161,12 @@ canvas{display:block;}
 .shop-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:background 0.2s,transform 0.2s;}
 .shop-dot.on{background:var(--c2);transform:scale(1.35);}
 
-/* Keeper bubble */
-#keeperBubble{position:absolute;left:16px;bottom:108px;z-index:10;background:rgba(8,5,24,0.96);border:1px solid rgba(123,79,255,0.3);border-radius:10px;padding:10px 13px;max-width:195px;backdrop-filter:blur(12px);}
-#keeperBubble::after{content:'';position:absolute;bottom:-8px;left:24px;border:8px solid transparent;border-top-color:rgba(123,79,255,0.3);border-bottom:none;}
-.kb-text{font-family:'Space Mono',monospace;font-size:0.53rem;color:#ddd;line-height:1.6;margin-bottom:7px;}
-.kb-next{background:none;border:1px solid rgba(123,79,255,0.22);border-radius:3px;padding:3px 8px;color:#aaa;font-family:'Space Mono',monospace;font-size:0.47rem;cursor:none;transition:all 0.2s;letter-spacing:1px;width:100%;}
-.kb-next:hover{color:var(--c2);border-color:rgba(0,212,255,0.3);}
+/* Save button */
+#saveBtn{position:fixed;bottom:14px;right:16px;z-index:211;padding:7px 16px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:5px;color:var(--c2);font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:2px;cursor:none;transition:all 0.25s;display:none;}
+#saveBtn.show{display:block;}
+#saveBtn:hover{background:rgba(0,212,255,0.18);border-color:var(--c2);box-shadow:0 0 14px rgba(0,212,255,0.3);}
+#saveBtn.saving{color:var(--gold);border-color:var(--gold);animation:savepulse 0.8s ease infinite;}
+@keyframes savepulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 
 /* TOAST */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:400;background:rgba(3,2,15,0.95);border:1px solid rgba(0,212,255,0.4);border-radius:6px;padding:10px 20px;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--c2);letter-spacing:3px;pointer-events:none;opacity:0;transition:opacity 0.3s;}
@@ -340,15 +340,16 @@ canvas{display:block;}
     <div class="s3d-emoji" id="sEmoji">🔩</div>
     <div class="s3d-info">
       <div class="s3d-name" id="sName">IRON HOOK</div>
-      <div class="s3d-desc" id="sDesc">Classic workshop crowbar.</div>
+      <div class="s3d-desc" id="sDesc">Basically spawning in naked.</div>
       <div class="s3d-price" id="sPrice">FREE</div>
     </div>
     <button class="s3d-btn" id="sBtn" onclick="shopAction()">EQUIPPED</button>
   </div>
-  <div id="keeperBubble">
-    <div class="kb-text" id="keeperText">Welcome, climber. Skins won't buy themselves. Well... they will. That's the point.</div>
-    <button class="kb-next" onclick="nextKeeperLine()">next line ›</button>
-  </div>
+  <!-- Keeper speech bubble lives in 3D scene as a mesh — hidden DOM nodes track typing state -->
+  <span id="keeperTyped" style="display:none"></span>
+  <span id="keeperCursor" style="display:none"></span>
+  <div id="keeperDots" style="display:none"><span id="keeperProgress"></span></div>
+  <div id="saveBtn" onclick="manualSave()">💾 SAVE</div>
 </div>
 
 <!-- PAUSE -->
@@ -493,28 +494,28 @@ initThree();
 
 /* ── SKIN DEFINITIONS ── */
 const CROWBAR_SKINS=[
-  {id:0,name:'Iron Hook',    emoji:'🔩',desc:'Classic workshop crowbar. Gets the job done.',           price:0,   shaftCol:0x2a2a2a,hookCol:0x444444,glowCol:0xFFD000,emi:0.2},
-  {id:1,name:'Gold Rush',    emoji:'🥇',desc:'Forged from actual cosmic gold. Allegedly.',             price:150, shaftCol:0xAA8800,hookCol:0xFFD000,glowCol:0xFFFF00,emi:0.6},
-  {id:2,name:'Neon Zap',     emoji:'⚡',desc:'Electric blue crackling energy. Very cool.',             price:200, shaftCol:0x001133,hookCol:0x00AAFF,glowCol:0x00D4FF,emi:0.8},
-  {id:3,name:'Magma Core',   emoji:'🌋',desc:'Ripped from a volcano. Still hot.',                     price:250, shaftCol:0x330800,hookCol:0xFF4400,glowCol:0xFF6600,emi:0.9},
-  {id:4,name:'Crystal Edge', emoji:'💎',desc:'Translucent gemstone energy. Sparkles confirmed.',       price:275, shaftCol:0x88BBCC,hookCol:0xAAEEFF,glowCol:0x00FFEE,emi:0.7},
-  {id:5,name:'Void Reaper',  emoji:'☠️',desc:'Absorbs souls. (Unverified claim.)',                    price:350, shaftCol:0x080010,hookCol:0x8800FF,glowCol:0xFF00FF,emi:1.0},
-  {id:6,name:'Rainbow',      emoji:'🌈',desc:'For people who want everyone to know.',                  price:400, shaftCol:0x222222,hookCol:0xFFFFFF,glowCol:0xFFFFFF,emi:0.8,rainbow:true},
-  {id:7,name:'Plasma Cutter',emoji:'🔥',desc:"White hot plasma. Don't look directly at it.",          price:450, shaftCol:0xFFFFFF,hookCol:0xFFFFFF,glowCol:0xFFFFFF,emi:1.0,plasma:true},
-  {id:8,name:'Rusty Relic',  emoji:'🦀',desc:'Ancient. Worn. Has history. Smells weird.',             price:300, shaftCol:0x553311,hookCol:0x774422,glowCol:0xFF8844,emi:0.3},
-  {id:9,name:'Cosmic Legend',emoji:'🌠',desc:'Max power. Made of compressed starlight.',             price:750, shaftCol:0x110022,hookCol:0xFFCC00,glowCol:0xFFFFFF,emi:1.0,rainbow:true,plasma:true},
+  {id:0,name:'Iron Hook',    emoji:'🔩',desc:'Basically spawning into the world naked.',           price:0,   shaftCol:0x2a2a2a,hookCol:0x444444,glowCol:0xFFD000,emi:0.2},
+  {id:1,name:'Gold Rush',    emoji:'🥇',desc:'I bought this from my grandmommy. Don't judge',             price:200, shaftCol:0xAA8800,hookCol:0xFFD000,glowCol:0xFFFF00,emi:0.6},
+  {id:2,name:'Neon Zap',     emoji:'⚡',desc:'My eyes are stuck shut because I woke up and looked at this',             price:250, shaftCol:0x001133,hookCol:0x00AAFF,glowCol:0x00D4FF,emi:0.8},
+  {id:3,name:'Magma Core',   emoji:'🌋',desc:'I warm my showers with this. Tell me if you find any hairs.',                     price:300, shaftCol:0x330800,hookCol:0xFF4400,glowCol:0xFF6600,emi:0.9},
+  {id:4,name:'Crystal Edge', emoji:'💎',desc:'This made me permanently blind even if I could open my eyes',       price:350, shaftCol:0x88BBCC,hookCol:0xAAEEFF,glowCol:0x00FFEE,emi:0.7},
+  {id:5,name:'Void Reaper',  emoji:'☠️',desc:'The guy who made this is a really chill dude who sleeps with plushies',                    price:450, shaftCol:0x080010,hookCol:0x8800FF,glowCol:0xFF00FF,emi:1.0},
+  {id:6,name:'Rainbow',      emoji:'🌈',desc:'For people who want everyone to know. Also for Arjun Nayak',                  price:750, shaftCol:0x222222,hookCol:0xFFFFFF,glowCol:0xFFFFFF,emi:0.8,rainbow:true},
+  {id:7,name:'Plasma Cutter',emoji:'🔥',desc:"Why it looks like toilet paper nobody will know",          price:900, shaftCol:0xFFFFFF,hookCol:0xFFFFFF,glowCol:0xFFFFFF,emi:1.0,plasma:true},
+  {id:8,name:'Rusty Relic',  emoji:'🦀',desc:'Ancient. Worn. Has history. Smells weird. ',             price:1250, shaftCol:0x553311,hookCol:0x774422,glowCol:0xFF8844,emi:0.3},
+  {id:9,name:'Cosmic Legend',emoji:'🌠',desc:' If my crowbar turns golden, run: ahh crowbar',             price:1500, shaftCol:0x110022,hookCol:0xFFCC00,glowCol:0xFFFFFF,emi:1.0,rainbow:true,plasma:true},
 ];
 const CHAR_SKINS=[
-  {id:0,name:'Worker',       emoji:'👷',desc:'Hard hat required. OSHA approved.',                    price:0,   torso:0x222244,head:0xFFCC99,hat:0xFFCC00,hatType:'hardhat',leg:0x1a1a3a,boot:0x553300,eyeCol:0x111111},
-  {id:1,name:'Astronaut',    emoji:'👨‍🚀',desc:'Zero gravity certified. Still falls a lot.',          price:200, torso:0xDDEEFF,head:0xCCDDEE,hat:0xAAAAAA,hatType:'dome',  leg:0xBBCCDD,boot:0x888899,eyeCol:0x0066AA},
-  {id:2,name:'Shadow Ninja', emoji:'🥷',desc:'Darkness is my ally. Unfortunately visible.',          price:300, torso:0x0a0a0a,head:0x111111,hat:0x000000,hatType:'ninja',  leg:0x050505,boot:0x111100,eyeCol:0xFF0000},
-  {id:3,name:'Viking',       emoji:'🪓',desc:'VALHALLA! Also good at climbing apparently.',          price:350, torso:0x7B3B00,head:0xFFAA77,hat:0x554400,hatType:'horn',   leg:0x3a2200,boot:0x442200,eyeCol:0x4488FF},
-  {id:4,name:'Steel Bot',    emoji:'🤖',desc:'400% efficiency. 0% soul. Very efficient.',            price:400, torso:0x444455,head:0x556677,hat:0x334455,hatType:'antenna',leg:0x333344,boot:0x222233,eyeCol:0x00FF88},
-  {id:5,name:'Arcane Wizard',emoji:'🧙',desc:'Teleportation would be easier but here we are.',     price:450, torso:0x330066,head:0xFFCCAA,hat:0x220044,hatType:'wizard',  leg:0x220055,boot:0x110033,eyeCol:0xFF88FF},
-  {id:6,name:'Sea Pirate',   emoji:'🏴‍☠️',desc:'Sea legs. Also cliff legs. Very versatile.',          price:350, torso:0x7B0000,head:0xFFAA88,hat:0x111111,hatType:'pirate',  leg:0x2a1500,boot:0x330000,eyeCol:0x33AA66},
-  {id:7,name:'Iron Knight',  emoji:'⚔️',desc:'Sworn to climb. Honor demands ascension.',             price:500, torso:0x778899,head:0xAABBCC,hat:0x556677,hatType:'helm',    leg:0x445566,boot:0x334455,eyeCol:0xCCEEFF},
-  {id:8,name:'Xenomorph',    emoji:'👽',desc:'From another dimension. Also good at climbing.',       price:600, torso:0x004422,head:0x003311,hat:0x002200,hatType:'alien',   leg:0x002211,boot:0x001100,eyeCol:0x00FF44},
-  {id:9,name:'Golden God',   emoji:'✨',desc:'Ultimate form. Literally made of gold.',               price:1000,torso:0xAA8800,head:0xFFCC44,hat:0xFFDD00,hatType:'crown',   leg:0x886600,boot:0x664400,eyeCol:0xFFFF00},
+  {id:0,name:'Worker',       emoji:'👷',desc:'My collar's blue, but my neck is red',                    price:0,   torso:0x222244,head:0xFFCC99,hat:0xFFCC00,hatType:'hardhat',leg:0x1a1a3a,boot:0x553300,eyeCol:0x111111},
+  {id:1,name:'Astronaut',    emoji:'👨‍🚀',desc:'Bro's gonna be happy to the moon trust',          price:200, torso:0xDDEEFF,head:0xCCDDEE,hat:0xAAAAAA,hatType:'dome',  leg:0xBBCCDD,boot:0x888899,eyeCol:0x0066AA},
+  {id:2,name:'Shadow Ninja', emoji:'🥷',desc:'Creature of the night. Deyontae liked it.',          price:300, torso:0x0a0a0a,head:0x111111,hat:0x000000,hatType:'ninja',  leg:0x050505,boot:0x111100,eyeCol:0xFF0000},
+  {id:3,name:'Viking',       emoji:'🪓',desc:'SBSD VIKINGS! Also good climber.',          price:350, torso:0x7B3B00,head:0xFFAA77,hat:0x554400,hatType:'horn',   leg:0x3a2200,boot:0x442200,eyeCol:0x4488FF},
+  {id:4,name:'Steel Bot',    emoji:'🤖',desc:'Check important info. AI can make mistakes.',            price:400, torso:0x444455,head:0x556677,hat:0x334455,hatType:'antenna',leg:0x333344,boot:0x222233,eyeCol:0x00FF88},
+  {id:5,name:'Arcane Wizard',emoji:'🧙',desc:'This lowkey reminds me of wizard of Zo. Dorp approved',     price:450, torso:0x330066,head:0xFFCCAA,hat:0x220044,hatType:'wizard',  leg:0x220055,boot:0x110033,eyeCol:0xFF88FF},
+  {id:6,name:'Sea Pirate',   emoji:'🏴‍☠️',desc:'Sack Jarrow, Jack Sparrow, same same different font',          price:350, torso:0x7B0000,head:0xFFAA88,hat:0x111111,hatType:'pirate',  leg:0x2a1500,boot:0x330000,eyeCol:0x33AA66},
+  {id:7,name:'Iron Knight',  emoji:'⚔️',desc:'Sadly not Golden Knight but a crazy tank. Ifykyk.',             price:500, torso:0x778899,head:0xAABBCC,hat:0x556677,hatType:'helm',    leg:0x445566,boot:0x334455,eyeCol:0xCCEEFF},
+  {id:8,name:'Xenomorph',    emoji:'👽',desc:'Probably from mars. Crazy good posture.',       price:600, torso:0x004422,head:0x003311,hat:0x002200,hatType:'alien',   leg:0x002211,boot:0x001100,eyeCol:0x00FF44},
+  {id:9,name:'Golden God',   emoji:'✨',desc:'JOJO GOLDEN WIND GIORNO GOLDEN EXPERIENCE YESSIR.',               price:1000,torso:0xAA8800,head:0xFFCC44,hat:0xFFDD00,hatType:'crown',   leg:0x886600,boot:0x664400,eyeCol:0xFFFF00},
 ];
 
 const KEEPER_LINES=[
@@ -534,8 +535,6 @@ const KEEPER_LINES=[
   "Xenomorph gives +10% grip strength. (Fictional fact. Do not cite.)",
   "I sell skins. The universe sells consequences. Together: a full economy.",
 ];
-let keeperLine=0;
-
 /* ── WORLDS DATA ── */
 const WORLDS=[
   {id:0,name:'NEBULA DAWN',  theme:'Swirling purple nebula',bgCol:0x04010C,fogCol:0x04010E,fogD:0.008,
@@ -589,7 +588,11 @@ async function loadProfile(){
   if(!profile.deviceId)profile.deviceId=genId();
   return profile;
 }
-async function saveProfile(){try{await window.storage.set('profile',JSON.stringify(profile));}catch(e){}}
+async function saveProfile(){
+  const s=JSON.stringify(profile);
+  try{await window.storage.set('profile',s);}catch(e){}
+  try{localStorage.setItem('stickclimb_profile',s);}catch(e){}
+}
 
 async function loadNames(){try{const r=await window.storage.get('names:v2',true);if(r)return JSON.parse(r.value);}catch(e){}return{};}
 async function saveNames(reg){try{await window.storage.set('names:v2',JSON.stringify(reg),true);}catch(e){}}
@@ -646,6 +649,8 @@ async function submitName(){
   const res=await claimName($('nameInput').value);
   if(res.ok){
     $('nameModal').classList.add('hide');$('menuNameBadge').textContent='👤 '+profile.name;
+    $('saveBtn').classList.add('show');
+    try{localStorage.setItem('stickclimb_profile',JSON.stringify(profile));}catch(e){}
     if(!nameChanging){$('menu').classList.remove('hide');loadMiniLB();}
   }else $('nameError').textContent=res.msg;
 }
@@ -761,6 +766,7 @@ function initShopRenderer(){
   sScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xaaaaff,size:0.35,transparent:true,opacity:0.6})));
   buildStall();
   buildShopkeeper();
+  buildKeeperSign3D();
 }
 
 function buildStall(){
@@ -819,54 +825,265 @@ function buildStall(){
 
 function buildShopkeeper(){
   sKeeperGroup=new THREE.Group();
-  const skinCol=0xFFCC99,purpMat=new THREE.MeshPhongMaterial({color:0x5522aa,emissive:0x220044,shininess:60});
-  const skinMat=new THREE.MeshPhongMaterial({color:skinCol,emissive:0x221100,shininess:80});
-  const darkMat=new THREE.MeshPhongMaterial({color:0x110022,shininess:30});
-  const goldMat=new THREE.MeshPhongMaterial({color:0xFFD000,emissive:0x885500,emissiveIntensity:0.5,shininess:120});
-  const eyeMat=new THREE.MeshBasicMaterial({color:0x111111});
-  const whiteMat=new THREE.MeshBasicMaterial({color:0xffffff});
-  // Body torso
-  const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.65,1.6,16),purpMat);torso.position.set(0,1.2,0);torso.castShadow=true;sKeeperGroup.add(torso);
-  // Coat lapels
-  const lapelMat=new THREE.MeshPhongMaterial({color:0x3a1066,shininess:60});
-  for(let s of[-1,1]){const lp=new THREE.Mesh(new THREE.BoxGeometry(0.25,1.0,0.2),lapelMat);lp.position.set(s*0.35,1.3,0.62);lp.rotation.z=s*0.2;sKeeperGroup.add(lp);}
+
+  const coat  =new THREE.MeshPhongMaterial({color:0x5522aa,emissive:0x1a0044,shininess:60});
+  const skin  =new THREE.MeshPhongMaterial({color:0xFFCC99,emissive:0x110800,shininess:80});
+  const dark  =new THREE.MeshPhongMaterial({color:0x0d0020,shininess:30});
+  const gold  =new THREE.MeshPhongMaterial({color:0xFFD000,emissive:0x664400,emissiveIntensity:0.5,shininess:120});
+  const white =new THREE.MeshBasicMaterial({color:0xffffff});
+  const black =new THREE.MeshBasicMaterial({color:0x111111});
+  const lapel =new THREE.MeshPhongMaterial({color:0x2a0055,shininess:50});
+
+  // ── Body (torso) centred at y=0 ──
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.58,1.5,16),coat);
+  torso.position.set(0,0.75,0);torso.castShadow=true;sKeeperGroup.add(torso);
+
+  // Lapels
+  for(const s of[-1,1]){
+    const lp=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.9,0.18),lapel);
+    lp.position.set(s*0.28,0.8,0.56);lp.rotation.z=s*0.18;sKeeperGroup.add(lp);
+  }
+
   // Gold badge
-  const badge=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.08,16),goldMat);badge.rotation.x=PI/2;badge.position.set(0,1.55,0.72);sKeeperGroup.add(badge);
-  // Head
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.58,20,20),skinMat);head.position.set(0,2.55,0);head.castShadow=true;sKeeperGroup.add(head);
-  // Eyes whites
-  for(let s of[-1,1]){
-    const ew=new THREE.Mesh(new THREE.SphereGeometry(0.14,12,12),whiteMat);ew.position.set(s*0.22,2.62,0.5);sKeeperGroup.add(ew);
-    const ep=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,10),eyeMat);ep.position.set(s*0.22,2.62,0.56);sKeeperGroup.add(ep);
+  const badge=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.07,16),gold);
+  badge.rotation.x=PI/2;badge.position.set(0,1.0,0.65);sKeeperGroup.add(badge);
+
+  // ── Neck ──
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.25,0.3,12),skin);
+  neck.position.set(0,1.65,0);sKeeperGroup.add(neck);
+
+  // ── Head ──
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.52,20,20),skin);
+  head.position.set(0,2.3,0);head.castShadow=true;sKeeperGroup.add(head);
+
+  // Eyes
+  for(const s of[-1,1]){
+    const ew=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,10),white);ew.position.set(s*0.19,2.37,0.46);sKeeperGroup.add(ew);
+    const ep=new THREE.Mesh(new THREE.SphereGeometry(0.055,8,8),black);ep.position.set(s*0.19,2.37,0.51);sKeeperGroup.add(ep);
   }
-  // Smile
-  const smileMat=new THREE.MeshBasicMaterial({color:0x774422});
-  for(let i=0;i<5;i++){const a=-0.4+i*0.2;const sm=new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6),smileMat);sm.position.set(Math.sin(a)*0.22,2.35+Math.cos(a)*0.08,0.52);sKeeperGroup.add(sm);}
-  // Hat brim
-  const hatBrim=new THREE.Mesh(new THREE.CylinderGeometry(0.78,0.78,0.12,20),darkMat);hatBrim.position.set(0,2.97,0);sKeeperGroup.add(hatBrim);
-  // Hat crown
-  const hatTop=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.6,0.85,20),darkMat);hatTop.position.set(0,3.48,0);sKeeperGroup.add(hatTop);
-  // Hat band (gold)
-  const hatBand=new THREE.Mesh(new THREE.CylinderGeometry(0.53,0.53,0.15,20),goldMat);hatBand.position.set(0,3.08,0);sKeeperGroup.add(hatBand);
-  // Hat star
-  const star=new THREE.Mesh(new THREE.OctahedronGeometry(0.14,0),new THREE.MeshBasicMaterial({color:0xFFD000}));star.position.set(0,3.91,0.5);sKeeperGroup.add(star);
-  // Arms
-  for(let s of[-1,1]){
-    const uArm=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.18,0.9,12),purpMat);uArm.position.set(s*0.9,1.4,0);uArm.rotation.z=s*0.45;sKeeperGroup.add(uArm);
-    const lArm=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.15,0.8,12),skinMat);lArm.position.set(s*1.3,0.95,0.15);lArm.rotation.z=s*0.3;lArm.rotation.x=0.3;sKeeperGroup.add(lArm);
-    const hand=new THREE.Mesh(new THREE.SphereGeometry(0.18,10,10),skinMat);hand.position.set(s*1.5,0.6,0.35);sKeeperGroup.add(hand);
+
+  // Eyebrows
+  for(const s of[-1,1]){
+    const br=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.04,0.04),black);
+    br.position.set(s*0.19,2.52,0.48);br.rotation.z=s*0.18;sKeeperGroup.add(br);
   }
-  // Legs
-  for(let s of[-1,1]){
-    const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.2,1.1,12),darkMat);leg.position.set(s*0.28,-0.35,0);sKeeperGroup.add(leg);
-    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.35,0.25,0.6),new THREE.MeshPhongMaterial({color:0x1a0a00}));boot.position.set(s*0.28,-1.0,0.1);sKeeperGroup.add(boot);
+
+  // Smile (arc of dots)
+  for(let i=0;i<5;i++){
+    const a=-0.5+i*0.25;
+    const sm=new THREE.Mesh(new THREE.SphereGeometry(0.035,6,6),new THREE.MeshBasicMaterial({color:0x884422}));
+    sm.position.set(Math.sin(a)*0.2,2.18+Math.cos(a)*0.06,0.49);sKeeperGroup.add(sm);
   }
-  sKeeperGroup.position.set(-5.5,1.2,-5.5);
-  sKeeperGroup.rotation.y=0.55;
+
+  // ── Hat ──
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(0.72,0.72,0.1,20),dark);
+  brim.position.set(0,2.72,0);sKeeperGroup.add(brim);
+  const crown=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.54,0.78,20),dark);
+  crown.position.set(0,3.17,0);sKeeperGroup.add(crown);
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(0.49,0.49,0.14,20),gold);
+  band.position.set(0,2.84,0);sKeeperGroup.add(band);
+  const starOct=new THREE.Mesh(new THREE.OctahedronGeometry(0.12,0),new THREE.MeshBasicMaterial({color:0xFFD000}));
+  starOct.position.set(0,3.58,0.46);sKeeperGroup.add(starOct);
+
+  // ── Arms — natural hang at sides, leaning on counter ──
+  // Right arm (from viewer): rests on counter, elbow bent forward
+  const armR_upper=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.16,0.82,12),coat);
+  armR_upper.position.set(0.78,0.72,0);armR_upper.rotation.z=-0.25;armR_upper.rotation.x=0.1;sKeeperGroup.add(armR_upper);
+  const armR_lower=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.13,0.78,12),skin);
+  armR_lower.position.set(1.12,0.28,0.32);armR_lower.rotation.z=-0.15;armR_lower.rotation.x=0.7;sKeeperGroup.add(armR_lower);
+  const handR=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,10),skin);
+  handR.position.set(1.22,-0.05,0.72);sKeeperGroup.add(handR);
+
+  // Left arm: slightly raised, pointing toward wares
+  const armL_upper=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.16,0.82,12),coat);
+  armL_upper.position.set(-0.78,0.82,0);armL_upper.rotation.z=0.35;armL_upper.rotation.x=-0.05;sKeeperGroup.add(armL_upper);
+  const armL_lower=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.13,0.78,12),skin);
+  armL_lower.position.set(-1.18,0.55,0.18);armL_lower.rotation.z=0.55;armL_lower.rotation.x=0.25;sKeeperGroup.add(armL_lower);
+  const handL=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,10),skin);
+  handL.position.set(-1.48,0.32,0.34);sKeeperGroup.add(handL);
+
+  // ── Legs ──
+  for(const s of[-1,1]){
+    const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.17,1.05,12),dark);
+    leg.position.set(s*0.24,-0.53,0);sKeeperGroup.add(leg);
+    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.2,0.52),new THREE.MeshPhongMaterial({color:0x0a0500}));
+    boot.position.set(s*0.24,-1.12,0.1);sKeeperGroup.add(boot);
+  }
+
+  // Place keeper behind and to the left of counter, fully above floor
+  sKeeperGroup.position.set(-5.2, 2.2, -5.2);
+  sKeeperGroup.rotation.y = 0.55; // faces toward camera+right (toward items)
   sScene.add(sKeeperGroup);
 }
 
-/* ── 3D ITEM MESH BUILDERS ── */
+/* ── 3D KEEPER SPEECH SIGN ── */
+let sSignGroup=null,sSignTexture=null,sSignCanvas=null;
+const SIGN_W=5.4,SIGN_H=3.0,SIGN_D=0.28;
+const SIGN_CV_W=512,SIGN_CV_H=280;
+
+function buildKeeperSign3D(){
+  sSignCanvas=document.createElement('canvas');
+  sSignCanvas.width=SIGN_CV_W;sSignCanvas.height=SIGN_CV_H;
+  sSignTexture=new THREE.CanvasTexture(sSignCanvas);
+
+  sSignGroup=new THREE.Group();
+
+  // ── Main extruded box ──
+  const darkPurp=new THREE.MeshPhongMaterial({color:0x06031a,emissive:0x04021a,shininess:40});
+  const frontMat=new THREE.MeshBasicMaterial({map:sSignTexture,side:THREE.FrontSide});
+
+  // Use 6-material box: sides=darkPurp, front(+Z face index 4)=canvas, back=darkPurp
+  const boxMats=[darkPurp,darkPurp,darkPurp,darkPurp,frontMat,darkPurp];
+  const signBox=new THREE.Mesh(new THREE.BoxGeometry(SIGN_W,SIGN_H,SIGN_D,1,1,1),boxMats);
+  signBox.castShadow=true;sSignGroup.add(signBox);
+
+  // ── Glowing edge trim ──
+  const trimMat=new THREE.MeshBasicMaterial({color:0x7B4FFF,transparent:true,opacity:0.9});
+  const crnMat=new THREE.MeshBasicMaterial({color:0x00D4FF});
+  const hw=SIGN_W/2+0.04,hh=SIGN_H/2+0.04,zf=SIGN_D/2+0.01;
+  // 4 edge bars
+  [[0,hh],[0,-hh]].forEach(([x,y])=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(SIGN_W+0.12,0.08,0.08),trimMat.clone());
+    b.position.set(x,y,zf);sSignGroup.add(b);
+  });
+  [[-hw,0],[hw,0]].forEach(([x,y])=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(0.08,SIGN_H+0.12,0.08),trimMat.clone());
+    b.position.set(x,y,zf);sSignGroup.add(b);
+  });
+  // 4 corner dots
+  [[-hw,-hh],[-hw,hh],[hw,-hh],[hw,hh]].forEach(([x,y])=>{
+    const c=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,8),crnMat);
+    c.position.set(x,y,zf);sSignGroup.add(c);
+  });
+  // Corner glow point lights
+  const gl=new THREE.PointLight(0x7B4FFF,0.8,6);gl.position.set(0,0,zf+0.3);sSignGroup.add(gl);
+  sSignGroup.userData.glowLight=gl;
+
+  // Tail: points from bottom-left of sign down toward keeper
+  const tailGeo = new THREE.BufferGeometry();
+  const lx = -SIGN_W / 2, ly = -SIGN_H / 2, zf2 = SIGN_D / 2 - 0.02;
+  const tailVerts = new Float32Array([
+    lx + 0.1,  ly,      zf2,   // A – left edge of base
+    lx + 0.9,  ly,      zf2,   // B – right edge of base
+    lx - 1.0,  ly - 1.0, zf2,  // C – tip (Shorter: adjusted from -1.8, -2.0)
+  ]);
+  tailGeo.setAttribute('position', new THREE.Float32BufferAttribute(tailVerts, 3));
+  tailGeo.setIndex([0, 2, 1]);
+  tailGeo.computeVertexNormals();
+  const tailMat = new THREE.MeshBasicMaterial({ color: 0x06031a, side: THREE.DoubleSide });
+  const tail = new THREE.Mesh(tailGeo, tailMat);
+  sSignGroup.add(tail);
+
+  // Tail outline (Must match the new coordinates for the tip)
+  const tailOutlineGeo = new THREE.BufferGeometry();
+  tailOutlineGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array([
+    lx + 0.1, ly, zf2, 
+    lx - 1.0, ly - 1.0, zf2, // Updated tip
+    lx + 0.9, ly, zf2, 
+    lx + 0.1, ly, zf2
+  ]), 3));
+  sSignGroup.add(new THREE.Line(tailOutlineGeo, new THREE.LineBasicMaterial({ color: 0x7B4FFF, transparent: true, opacity: 0.9 })));
+
+
+  // Sign floats above-right of keeper, IN FRONT of back wall (z=-3 is in front of stall at z=-7)
+  sSignGroup.position.set(-1.8, 7.0, -3.5);
+  sSignGroup.rotation.y = 0.0;
+  sSignGroup.userData.baseY = 7.0;
+  sScene.add(sSignGroup);
+
+  // Draw initial blank state
+  drawKeeperSignCanvas('','','1 / '+KEEPER_LINES.length);
+}
+
+function drawKeeperSignCanvas(displayText,showCursor,progressText){
+  if(!sSignCanvas||!sSignTexture)return;
+  const ctx=sSignCanvas.getContext('2d');
+  const W=SIGN_CV_W,H=SIGN_CV_H;
+
+  // ── Background ──
+  ctx.clearRect(0,0,W,H);
+  // Deep background fill
+  ctx.fillStyle='#070418';
+  ctx.beginPath();roundRectPath(ctx,4,4,W-8,H-8,22);ctx.fill();
+
+  // Subtle inner glow gradient
+  const ig=ctx.createRadialGradient(W/2,H/2,10,W/2,H/2,W*0.65);
+  ig.addColorStop(0,'rgba(123,79,255,0.08)');ig.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=ig;
+  ctx.beginPath();roundRectPath(ctx,4,4,W-8,H-8,22);ctx.fill();
+
+  // ── Header bar ──
+  const hg=ctx.createLinearGradient(0,12,W,42);
+  hg.addColorStop(0,'rgba(123,79,255,0.35)');hg.addColorStop(1,'rgba(0,212,255,0.15)');
+  ctx.fillStyle=hg;
+  ctx.beginPath();roundRectPath(ctx,14,12,W-28,36,8);ctx.fill();
+
+  // Header text
+  ctx.fillStyle='#a085ff';
+  ctx.font='bold 15px Orbitron, monospace';
+  ctx.letterSpacing='3px';
+  ctx.textAlign='center';
+  ctx.fillText('DORP THE SHOPKEEPER',W/2,33);
+
+  // Live dot beside name
+  const dotPulse=0.5+Math.sin(Date.now()*0.003)*0.5;
+  ctx.fillStyle=`rgba(0,212,255,${0.5+dotPulse*0.5})`;
+  ctx.beginPath();ctx.arc(24,28,4,0,Math.PI*2);ctx.fill();
+
+  // ── Divider ──
+  const dg=ctx.createLinearGradient(20,0,W-20,0);
+  dg.addColorStop(0,'transparent');dg.addColorStop(0.3,'rgba(123,79,255,0.6)');dg.addColorStop(0.7,'rgba(0,212,255,0.4)');dg.addColorStop(1,'transparent');
+  ctx.strokeStyle=dg;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(20,54);ctx.lineTo(W-20,54);ctx.stroke();
+
+  // ── Body text with word-wrap ──
+  ctx.fillStyle='#ede8ff';ctx.font='13px "Space Mono", monospace';ctx.textAlign='left';ctx.letterSpacing='0.5px';
+  const words=(displayText||'').split(' ');const maxW=W-56,lineH=21;let line='',textY=80;
+  for(const w of words){
+    const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxW&&line){
+      ctx.fillText(line,28,textY);line=w;textY+=lineH;
+      if(textY>H-52)break;
+    }else line=test;
+  }
+  if(line&&textY<=H-52)ctx.fillText(line,28,textY);
+
+  // Blinking cursor
+  if(showCursor){
+    const cursorX=28+ctx.measureText(line||'').width+3;
+    if(Math.floor(Date.now()/500)%2===0){
+      ctx.fillStyle='#00D4FF';ctx.fillRect(cursorX,textY-13,2,15);
+    }
+  }
+
+  // ── Progress bar at bottom ──
+  const barY=H-28;
+  ctx.fillStyle='rgba(123,79,255,0.15)';
+  ctx.beginPath();roundRectPath(ctx,24,barY,W-48,12,6);ctx.fill();
+
+  // Parse progress
+  const parts=(progressText||'1/15').replace(' ','').split('/');
+  const cur=parseInt(parts[0])||1,tot=parseInt(parts[1])||KEEPER_LINES.length;
+  const frac=cur/tot;
+  const barGrad=ctx.createLinearGradient(24,0,24+(W-48)*frac,0);
+  barGrad.addColorStop(0,'#7B4FFF');barGrad.addColorStop(1,'#00D4FF');
+  ctx.fillStyle=barGrad;
+  ctx.beginPath();roundRectPath(ctx,24,barY,(W-48)*frac,12,6);ctx.fill();
+
+  // Progress text
+  ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='10px "Space Mono",monospace';ctx.textAlign='right';ctx.letterSpacing='1px';
+  ctx.fillText(cur+' / '+tot,W-24,barY-4);
+
+  sSignTexture.needsUpdate=true;
+}
+
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+
 function buildCrowbarMesh(skin){
   const g=new THREE.Group();
   const sm=new THREE.MeshPhongMaterial({color:skin.shaftCol,emissive:skin.shaftCol,emissiveIntensity:skin.emi*0.5,shininess:120});
@@ -1017,9 +1234,59 @@ function setShopTab(tab){
   buildShopItems();
 }
 
+/* ── KEEPER CHATBOX TYPING SYSTEM ── */
+let keeperLine=0,keeperTypingTimer=null,keeperCycleTimer=null,keeperTypingIdx=0,keeperTypingActive=false;
+let _keeperCurrentText='',_keeperShowCursor=false;
+
+function keeperRenderDots(){
+  // Progress is drawn onto 3D canvas — just refresh it
+  const p=$('keeperProgress');
+  if(p)p.textContent=(keeperLine+1)+' / '+KEEPER_LINES.length;
+  drawKeeperSignCanvas(_keeperCurrentText,_keeperShowCursor,(keeperLine+1)+' / '+KEEPER_LINES.length);
+}
+
+function keeperGoTo(idx){
+  keeperLine=idx;startKeeperTyping();resetKeeperCycle();
+}
+
+function startKeeperTyping(){
+  clearTimeout(keeperTypingTimer);keeperTypingActive=true;keeperTypingIdx=0;
+  _keeperCurrentText='';_keeperShowCursor=true;
+  drawKeeperSignCanvas('',true,(keeperLine+1)+' / '+KEEPER_LINES.length);
+
+  function type(){
+    const line=KEEPER_LINES[keeperLine];
+    if(keeperTypingIdx<=line.length){
+      _keeperCurrentText=line.slice(0,keeperTypingIdx);
+      keeperTypingIdx++;
+      drawKeeperSignCanvas(_keeperCurrentText,true,(keeperLine+1)+' / '+KEEPER_LINES.length);
+      keeperTypingTimer=setTimeout(type,keeperTypingIdx===1?0:32);
+    }else{
+      keeperTypingActive=false;_keeperShowCursor=false;
+      drawKeeperSignCanvas(_keeperCurrentText,false,(keeperLine+1)+' / '+KEEPER_LINES.length);
+    }
+  }
+  type();
+}
+
+function resetKeeperCycle(){
+  clearInterval(keeperCycleTimer);
+  keeperCycleTimer=setInterval(()=>{
+    keeperLine=(keeperLine+1)%KEEPER_LINES.length;startKeeperTyping();
+  },9000); // 9 seconds between lines
+}
+
+function startKeeperSystem(){
+  keeperLine=0;startKeeperTyping();resetKeeperCycle();
+}
+function stopKeeperSystem(){
+  clearTimeout(keeperTypingTimer);clearInterval(keeperCycleTimer);keeperTypingActive=false;
+  _keeperShowCursor=false;
+}
+
 function nextKeeperLine(){
   keeperLine=(keeperLine+1)%KEEPER_LINES.length;
-  $('keeperText').textContent=KEEPER_LINES[keeperLine];
+  startKeeperTyping();resetKeeperCycle();
 }
 
 async function shopAction(){
@@ -1074,7 +1341,7 @@ function shopRenderLoop(){
   // Keeper gentle bob
   if(sKeeperGroup){
     sKeeperGroup.rotation.y=0.55+Math.sin(t*0.5)*0.06;
-    sKeeperGroup.position.y=1.2+Math.sin(t*0.9)*0.04;
+    sKeeperGroup.position.y=2.2+Math.sin(t*0.9)*0.05;
   }
   // Stall sign pulse
   if(sStallGroup){
@@ -1087,23 +1354,37 @@ function shopRenderLoop(){
       }
     });
   }
-  if(sRenderer&&sScene&&sCamera)sRenderer.render(sScene,sCamera);
+  // Animate 3D sign — gentle float + glow pulse + cursor redraw
+  if(sSignGroup){
+    const baseY=sSignGroup.userData.baseY||7.2;
+    sSignGroup.position.y=baseY+Math.sin(t*0.7)*0.12;
+    sSignGroup.rotation.y=-0.10+Math.sin(t*0.4)*0.015;
+    if(sSignGroup.userData.glowLight){
+      sSignGroup.userData.glowLight.intensity=0.6+Math.sin(t*2.5)*0.25;
+    }
+    // Redraw canvas every 30 frames to animate cursor blink and dot live dot
+    if(Math.floor(t*60)%30===0){
+      drawKeeperSignCanvas(_keeperCurrentText,_keeperShowCursor,(keeperLine+1)+' / '+KEEPER_LINES.length);
+    }
+  }
+  if(sRenderer&&sScene&&sCamera){sRenderer.render(sScene,sCamera);}
 }
 
 function showShop(){
   $('menu').classList.add('hide');
   $('shopScreen').classList.add('show');
   $('shopCoinsVal').textContent=profile.coins;
-  $('keeperText').textContent=KEEPER_LINES[keeperLine];
   initShopRenderer();
   shopTabMode='crowbar';shopIdx=profile.activeCrowbar;
   $('sTabCrowbar').classList.add('active');$('sTabChar').classList.remove('active');
   buildShopItems();
   sLoopRunning=true;shopRenderLoop();
+  // Start keeper chatbox
+  setTimeout(()=>startKeeperSystem(),300);
 }
 
 async function hideShop(){
-  sLoopRunning=false;
+  sLoopRunning=false;stopKeeperSystem();
   $('shopScreen').classList.remove('show');
   $('menu').classList.remove('hide');
   // Deferred LB updates on shop close
@@ -1634,11 +1915,37 @@ function gameLoop(ts=0){
   renderer.render(scene,camera);
 }
 
+/* ── MANUAL SAVE ── */
+async function manualSave(){
+  const btn=$('saveBtn');btn.textContent='💾 SAVING...';btn.classList.add('saving');
+  try{
+    await saveProfile();
+    // Also flush leaderboards
+    if(profile.name){await pushCoinsLB();await pushSkinsLB();}
+    btn.textContent='✓ SAVED';btn.classList.remove('saving');btn.style.color='#44FF88';btn.style.borderColor='#44FF88';
+    showToast('PROGRESS SAVED ✓');
+    setTimeout(()=>{btn.textContent='💾 SAVE';btn.style.color='';btn.style.borderColor='';},2000);
+  }catch(e){btn.textContent='✗ FAILED';btn.classList.remove('saving');btn.style.color='#FF4455';setTimeout(()=>{btn.textContent='💾 SAVE';btn.style.color='';},2000);}
+}
+
 /* ── INIT ── */
 async function init(){
+  // Try to restore identity from localStorage first (so name is never lost)
+  try{
+    const lsData=localStorage.getItem('stickclimb_profile');
+    if(lsData){const ls=JSON.parse(lsData);if(ls.deviceId&&!profile.deviceId)Object.assign(profile,ls);}
+  }catch(e){}
   await loadProfile();
+  // Mirror to localStorage for next-session recall
+  try{localStorage.setItem('stickclimb_profile',JSON.stringify(profile));}catch(e){}
   if(!profile.name){openNameModal(false);}
-  else{$('nameModal').classList.add('hide');$('menu').classList.remove('hide');$('menuNameBadge').textContent='👤 '+profile.name;loadMiniLB();}
+  else{
+    $('nameModal').classList.add('hide');
+    $('menu').classList.remove('hide');
+    $('menuNameBadge').textContent='👤 '+profile.name;
+    $('saveBtn').classList.add('show');
+    loadMiniLB();
+  }
   buildStarfield(WORLDS[0]);renderer.setClearColor(0x05030A);renderer.render(scene,camera);
   (function menuLoop(){
     if(G)return;requestAnimationFrame(menuLoop);renderer.render(scene,camera);
